@@ -188,7 +188,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                     Mark as Completed
                   </button>
                 )}
-                {patient.isRedFlag && !patient.isPriority && (
+                {patient.status === 'Waiting' && patient.isRedFlag && !patient.isPriority && (
                   <button
                     onClick={() => {
                       attendFirst(patient.id);
@@ -199,7 +199,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                     Attend First (Priority)
                   </button>
                 )}
-                {patient.isRedFlag && (
+                {patient.status === 'Waiting' && patient.isRedFlag && (
                   <button
                     onClick={() => {
                       markNotUrgent(patient.id);

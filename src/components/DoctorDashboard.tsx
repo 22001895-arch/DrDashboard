@@ -9,12 +9,12 @@ import { EmptyState } from './EmptyState';
 import { PatientRow } from './PatientRow';
 import { PatientDetailView } from './PatientDetailView';
 import { CompletedPatientsTable } from './CompletedPatientsTable';
-import { Clock, CheckCircle2 } from 'lucide-react';
+import { Clock, CheckCircle2, Stethoscope } from 'lucide-react';
 
 export function DoctorDashboard() {
   const { submissions, loading, error, manualRefresh, newRedFlags, dismissRedFlag, dismissAllRedFlags } = useApp();
   const [selectedPatient, setSelectedPatient] = useState<PatientSubmission | null>(null);
-  const [activeView, setActiveView] = useState<'waiting' | 'completed'>('waiting');
+  const [activeView, setActiveView] = useState<'waiting' | 'in-progress' | 'completed'>('waiting');
 
   // If a patient is selected, show the detail view
   if (selectedPatient) {
@@ -92,6 +92,20 @@ export function DoctorDashboard() {
                 </span>
               </button>
               <button
+                onClick={() => setActiveView('in-progress')}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${
+                  activeView === 'in-progress'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Stethoscope className="w-5 h-5" />
+                In Consultation
+                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
+                  {submissions.filter(s => s.status === 'In Progress').length}
+                </span>
+              </button>
+              <button
                 onClick={() => setActiveView('completed')}
                 className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${
                   activeView === 'completed'
@@ -156,7 +170,63 @@ export function DoctorDashboard() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {submissions
-                        .filter(p => p.status === 'Waiting' || p.status === 'In Progress')
+                        .filter(p => p.status === 'Waiting')
+                        .map((patient, index) => (
+                          <PatientRow
+                            key={patient.id}
+                            patient={patient}
+                            index={index}
+                            onViewDetails={setSelectedPatient}
+                          />
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            {/* Tab Content - In Progress Patients */}
+            {activeView === 'in-progress' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    In Consultation ({submissions.filter(s => s.status === 'In Progress').length})
+                  </h2>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-clinical overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-blue-600">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Queue #
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          RN
+                        </th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                          Age
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Gender
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Check In
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Doctor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {submissions
+                        .filter(p => p.status === 'In Progress')
                         .map((patient, index) => (
                           <PatientRow
                             key={patient.id}

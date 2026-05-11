@@ -32,6 +32,7 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gender</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Complaints</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Check-in</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Doctor</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Check-out</th>
               <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
               <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
@@ -47,7 +48,8 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
               return (
                 <tr 
                   key={patient.id}
-                  className="hover:bg-green-50 transition-colors"
+                  onClick={() => onViewDetails(patient)}
+                  className="hover:bg-green-50 transition-colors cursor-pointer"
                 >
                   {/* Queue Number */}
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -109,6 +111,17 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
                         {formatTime(patient.arrivalTime)}
                       </span>
                     </div>
+                  </td>
+
+                  {/* Doctor */}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {patient.seen_by_doctor_name ? (
+                      <span className="text-sm font-medium text-clinical-700 bg-clinical-50 px-2 py-1 rounded">
+                        {patient.seen_by_doctor_name}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">Unassigned</span>
+                    )}
                   </td>
 
                   {/* Check-out Time */}
