@@ -120,6 +120,7 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
       arrivalTime: parseDate(raw.created_at),
       createdAt: raw.created_at,
       vitals: parseVitals(raw),
+      clinicalHistoryFormatted: raw.clinical_history_formatted,
       seen_by_doctor_id: raw.seen_by_doctor_id,
       seen_by_doctor_name: raw.seen_by_doctor_name,
       consultation_started_at: raw.consultation_started_at

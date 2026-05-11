@@ -10,6 +10,8 @@ import { PatientRow } from './PatientRow';
 import { PatientDetailView } from './PatientDetailView';
 import { CompletedPatientsTable } from './CompletedPatientsTable';
 import { Clock, CheckCircle2, Stethoscope } from 'lucide-react';
+import { isPendingPatient } from '../utils/helpers';
+
 
 export function DoctorDashboard() {
   const { submissions, loading, error, manualRefresh, newRedFlags, dismissRedFlag, dismissAllRedFlags } = useApp();
@@ -19,9 +21,9 @@ export function DoctorDashboard() {
   // If a patient is selected, show the detail view
   if (selectedPatient) {
     return (
-      <PatientDetailView 
-        patient={selectedPatient} 
-        onClose={() => setSelectedPatient(null)} 
+      <PatientDetailView
+        patient={selectedPatient}
+        onClose={() => setSelectedPatient(null)}
       />
     );
   }
@@ -29,7 +31,7 @@ export function DoctorDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-clinical-50">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Red Flag Notifications */}
         {newRedFlags.length > 0 && (
@@ -59,7 +61,7 @@ export function DoctorDashboard() {
             message={error}
             type="error"
             onRetry={manualRefresh}
-            onDismiss={() => {}}
+            onDismiss={() => { }}
           />
         )}
 
@@ -79,25 +81,23 @@ export function DoctorDashboard() {
             <div className="flex gap-2 border-b border-gray-300">
               <button
                 onClick={() => setActiveView('waiting')}
-                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${
-                  activeView === 'waiting'
-                    ? 'border-clinical-600 text-clinical-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${activeView === 'waiting'
+                  ? 'border-clinical-600 text-clinical-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
               >
                 <Clock className="w-5 h-5" />
                 Waiting for Consultation
                 <span className="ml-2 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-bold rounded-full">
-                  {submissions.filter(s => s.status === 'Waiting').length}
+                  {submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length}
                 </span>
               </button>
               <button
                 onClick={() => setActiveView('in-progress')}
-                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${
-                  activeView === 'in-progress'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${activeView === 'in-progress'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
               >
                 <Stethoscope className="w-5 h-5" />
                 In Consultation
@@ -107,11 +107,10 @@ export function DoctorDashboard() {
               </button>
               <button
                 onClick={() => setActiveView('completed')}
-                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${
-                  activeView === 'completed'
-                    ? 'border-green-600 text-green-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-800'
-                }`}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${activeView === 'completed'
+                  ? 'border-green-600 text-green-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
               >
                 <CheckCircle2 className="w-5 h-5" />
                 Completed Consultations
@@ -126,7 +125,7 @@ export function DoctorDashboard() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-2xl font-bold text-gray-800">
-                    Patient Queue ({submissions.filter(s => s.status === 'Waiting').length})
+                    Patient Queue ({submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length})
                   </h2>
                   <div className="text-sm text-gray-600">
                     {submissions.filter(s => s.isRedFlag).length > 0 && (
@@ -170,7 +169,7 @@ export function DoctorDashboard() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {submissions
-                        .filter(p => p.status === 'Waiting')
+                        .filter(p => p.status === 'Waiting' && !isPendingPatient(p))
                         .map((patient, index) => (
                           <PatientRow
                             key={patient.id}
@@ -184,7 +183,7 @@ export function DoctorDashboard() {
                 </div>
               </div>
             )}
-            
+
             {/* Tab Content - In Progress Patients */}
             {activeView === 'in-progress' && (
               <div className="space-y-4">
@@ -243,8 +242,8 @@ export function DoctorDashboard() {
 
             {/* Tab Content - Completed Patients */}
             {activeView === 'completed' && (
-              <CompletedPatientsTable 
-                patients={submissions} 
+              <CompletedPatientsTable
+                patients={submissions}
                 onViewDetails={setSelectedPatient}
               />
             )}

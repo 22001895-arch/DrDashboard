@@ -3,7 +3,7 @@ import { PatientSubmission } from '../types';
 import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Check, Copy, CheckCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { VitalSignsDisplay } from './VitalSigns';
-import { FIELD_TRANSLATIONS } from '../utils/fieldTranslations';
+
 import { 
   formatTime, 
   getStatusColor,
@@ -348,155 +348,33 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                 </div>
                 
                 <div className="space-y-6 text-gray-800 leading-relaxed text-sm">
-                  {(() => {
-                    const details = patient.details;
-                    const skipKeys = ['name', 'age', 'gender', 'registrationNumber', 'rn', 'patientName', 'patientAge', 'patientGender'];
-                    
-                    // Build clinical sections
-                    const sections = {
-                      presenting: [],
-                      onset: [],
-                      symptoms: [],
-                      past: [],
-                      medications: [],
-                      allergies: [],
-                      other: [],
-                      redFlag: []
-                    };
-
-                    Object.entries(details).forEach(([key, value]) => {
-                      if (skipKeys.includes(key) || !value || value === "") return;
-
-                      // Handle red flag rule IDs specially
-                      if (key === 'triggeredRedFlagRuleIds') {
-                        const displayValue = Array.isArray(value) ? value.join(", ") : String(value);
-                        sections.redFlag.push({ label: 'Triggered Red Flag Rules', value: displayValue });
-                        return;
-                      }
-
-                      const niceLabel = FIELD_TRANSLATIONS[key] || key
-                        .split('_')
-                        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(' ');
-                      
-                      const displayValue = Array.isArray(value) ? value.join(", ") : String(value);
-
-                      // Categorize fields
-                      const lowerKey = key.toLowerCase();
-                      if (lowerKey.includes('complaint') || lowerKey.includes('presenting')) {
-                        sections.presenting.push({ label: niceLabel, value: displayValue });
-                      } else if (lowerKey.includes('onset') || lowerKey.includes('duration') || lowerKey.includes('progression')) {
-                        sections.onset.push({ label: niceLabel, value: displayValue });
-                      } else if (lowerKey.includes('symptom') || lowerKey.includes('associated') || lowerKey.includes('pain') || lowerKey.includes('fever') || lowerKey.includes('nausea')) {
-                        sections.symptoms.push({ label: niceLabel, value: displayValue });
-                      } else if (lowerKey.includes('history') || lowerKey.includes('medical') || lowerKey.includes('condition') || lowerKey.includes('surgery')) {
-                        sections.past.push({ label: niceLabel, value: displayValue });
-                      } else if (lowerKey.includes('medication')) {
-                        sections.medications.push({ label: niceLabel, value: displayValue });
-                      } else if (lowerKey.includes('allerg')) {
-                        sections.allergies.push({ label: niceLabel, value: displayValue });
-                      } else {
-                        sections.other.push({ label: niceLabel, value: displayValue });
-                      }
-                    });
-
-                    return (
-                      <>
-                        {/* Presenting Complaint */}
-                        {sections.presenting.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Presenting Complaint:</p>
-                            <div className="ml-0 space-y-1">
-                              {sections.presenting.map((item, idx) => (
-                                <p key={idx}>{item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Onset and Characteristics */}
-                        {sections.onset.length > 0 && (
-                          <div>
-                            {sections.presenting.length === 0 && <p className="font-semibold text-gray-900 mb-2">History:</p>}
-                            <div className="space-y-1">
-                              {sections.onset.map((item, idx) => (
-                                <p key={idx}><span className="font-medium">{item.label}:</span> {item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Associated Symptoms */}
-                        {sections.symptoms.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Associated Symptoms:</p>
-                            <div className="space-y-1">
-                              {sections.symptoms.map((item, idx) => (
-                                <p key={idx}><span className="font-medium">{item.label}:</span> {item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Past Medical History */}
-                        {sections.past.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Past Medical History:</p>
-                            <div className="space-y-1">
-                              {sections.past.map((item, idx) => (
-                                <p key={idx}><span className="font-medium">{item.label}:</span> {item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Medications */}
-                        {sections.medications.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Current Medications:</p>
-                            <div className="space-y-1">
-                              {sections.medications.map((item, idx) => (
-                                <p key={idx}><span className="font-medium">{item.label}:</span> {item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Allergies */}
-                        {sections.allergies.length > 0 && (
-                          <div>
-                            <p className="font-semibold text-gray-900 mb-2">Allergies:</p>
-                            <div className="space-y-1">
-                              {sections.allergies.map((item, idx) => (
-                                <p key={idx}>{item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Other Information */}
-                        {sections.other.length > 0 && (
-                          <div>
-                          
-
-                        {/* Red Flag Rule IDs */}
-                        {sections.redFlag.length > 0 && (
-                          <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-4">
-                            {sections.redFlag.map((item, idx) => (
-                              <p key={idx} className="text-red-700"><span className="font-semibold">{item.label}:</span> {item.value}</p>
-                            ))}
-                          </div>
-                        )}  <p className="font-semibold text-gray-900 mb-2">Additional Information:</p>
-                            <div className="space-y-1">
-                              {sections.other.map((item, idx) => (
-                                <p key={idx}><span className="font-medium">{item.label}:</span> {item.value}</p>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {patient.clinicalHistoryFormatted ? (
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 whitespace-pre-wrap font-sans text-gray-700 shadow-sm">
+                      {patient.clinicalHistoryFormatted}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
+                      <FileText className="w-12 h-12 mb-4 opacity-20" />
+                      <p className="font-medium">No formatted clinical history available.</p>
+                      <p className="text-xs mt-2 px-6 text-center">The processing for this patient record may still be in progress.</p>
+                    </div>
+                  )}
+                  {/* Red Flag Metadata (Technical) */}
+                  {patient.details?.triggeredRedFlagRuleIds && (
+                    <div className="mt-6 pt-6 border-t border-gray-100">
+                      <div className="flex items-center gap-2 mb-3">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Triggered Red Flag Rules</h4>
+                      </div>
+                      <div className="bg-red-50/50 p-3 rounded-lg border border-red-100/50">
+                        <p className="text-sm text-red-700 font-mono">
+                          {Array.isArray(patient.details.triggeredRedFlagRuleIds) 
+                            ? patient.details.triggeredRedFlagRuleIds.join(", ") 
+                            : String(patient.details.triggeredRedFlagRuleIds)}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -43,11 +43,11 @@ export function sortPatientQueue(submissions: PatientSubmission[]): PatientSubmi
     // Priority 1: Manually prioritized red-flags
     if (a.isPriority && !b.isPriority) return -1;
     if (!a.isPriority && b.isPriority) return 1;
-    
+
     // Priority 2: Red-flags
     if (a.isRedFlag && !b.isRedFlag) return -1;
     if (!a.isRedFlag && b.isRedFlag) return 1;
-    
+
     // Priority 3: Status ordering
     const statusOrder: Record<PatientStatus, number> = {
       'In Progress': 0,
@@ -56,7 +56,7 @@ export function sortPatientQueue(submissions: PatientSubmission[]): PatientSubmi
     };
     const statusDiff = statusOrder[a.status] - statusOrder[b.status];
     if (statusDiff !== 0) return statusDiff;
-    
+
     // Priority 4: Arrival time (earlier = higher priority)
     return a.arrivalTime.getTime() - b.arrivalTime.getTime();
   });
@@ -74,7 +74,7 @@ export function extractPatientName(details: PatientDetails): string {
  */
 export function extractAge(details: PatientDetails): number {
   const age = details.age || details.patientAge;
-  
+
   // Handle both string and number types
   let ageNum: number;
   if (typeof age === 'string') {
@@ -84,7 +84,7 @@ export function extractAge(details: PatientDetails): number {
   } else {
     return 0; // Unknown age
   }
-  
+
   // Validate age range
   if (!isNaN(ageNum) && ageNum > 0 && ageNum < 150) {
     return ageNum;
@@ -127,13 +127,13 @@ export function getMinutesSince(date: Date): number {
  */
 export function formatRelativeTime(date: Date): string {
   const minutes = getMinutesSince(date);
-  
+
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-  
+
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-  
+
   const days = Math.floor(hours / 24);
   return `${days} day${days !== 1 ? 's' : ''} ago`;
 }
@@ -172,4 +172,11 @@ export function formatRegistrationNumber(registrationNumber: string): string {
     return registrationNumber.substring(2);
   }
   return registrationNumber;
+}
+/**
+ * Check if a patient submission is still pending (AI summary contains "PENDING")
+ */
+export function isPendingPatient(patient: any): boolean {
+  const aiSummary = (patient.aiSummary || "").toUpperCase();
+  return aiSummary.includes('PENDING');
 }

@@ -28,6 +28,7 @@ export interface APISubmission {
   seen_by_doctor_id?: string;
   seen_by_doctor_name?: string;
   consultation_started_at?: string;
+  clinical_history_formatted?: string;
   redflag_override?: boolean;
   redflag_overridden_by_doctor_id?: string;
   redflag_overridden_at?: string;
@@ -57,6 +58,7 @@ export interface PatientSubmission {
   createdAt: string;
   // Vital signs
   vitals: VitalSigns;
+  clinicalHistoryFormatted?: string;
   // Doctor tracking fields (from DB)
   seen_by_doctor_id?: string;
   seen_by_doctor_name?: string;

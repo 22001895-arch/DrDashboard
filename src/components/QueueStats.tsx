@@ -1,14 +1,15 @@
 import { Users, Clock, Activity, AlertTriangle } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { isPendingPatient } from '../utils/helpers';
 
 export function QueueStats() {
   const { submissions } = useApp();
 
   const stats = {
-    total: submissions.length,
-    waiting: submissions.filter(s => s.status === 'Waiting').length,
+    total: submissions.filter(s => !isPendingPatient(s)).length,
+    waiting: submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length,
     inProgress: submissions.filter(s => s.status === 'In Progress').length,
-    redFlags: submissions.filter(s => s.isRedFlag).length
+    redFlags: submissions.filter(s => s.isRedFlag && !isPendingPatient(s)).length
   };
 
   const statCards = [
