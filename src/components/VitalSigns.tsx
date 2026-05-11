@@ -57,7 +57,7 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
         <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('ppi', vitals.ppi))}`}>
           <div className="flex items-center gap-2 mb-1">
             <Heart className="w-4 h-4" />
-            <span className="text-xs font-semibold">PPI</span>
+            <span className="text-xs font-semibold truncate">PPI</span>
           </div>
           <p className="text-lg font-bold">{typeof vitals.ppi === 'number' ? vitals.ppi.toFixed(2) : vitals.ppi}</p>
           <p className="text-xs opacity-75"></p>
@@ -67,7 +67,7 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
         <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('heartRate', vitals.heartRate))}`}>
           <div className="flex items-center gap-2 mb-1">
             <Droplets className="w-4 h-4" />
-            <span className="text-xs font-semibold">Heart Rate</span>
+            <span className="text-xs font-semibold truncate">HR</span>
           </div>
           <p className="text-lg font-bold">{vitals.heartRate}</p>
           <p className="text-xs opacity-75">bpm</p>
@@ -77,7 +77,7 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
         <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('respiratoryRate', vitals.respiratoryRate))}`}>
           <div className="flex items-center gap-2 mb-1">
             <Wind className="w-4 h-4" />
-            <span className="text-xs font-semibold">Breath</span>
+            <span className="text-xs font-semibold truncate">RR</span>
           </div>
           <p className="text-lg font-bold">{vitals.respiratoryRate}</p>
           <p className="text-xs opacity-75">/min</p>
@@ -87,7 +87,7 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
         <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('hrv', vitals.hrv))}`}>
           <div className="flex items-center gap-2 mb-1">
             <Activity className="w-4 h-4" />
-            <span className="text-xs font-semibold">HRV</span>
+            <span className="text-xs font-semibold truncate">HRV</span>
           </div>
           <p className="text-lg font-bold">{vitals.hrv}</p>
           <p className="text-xs opacity-75">ms</p>
@@ -106,9 +106,9 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5" />
-              <span className="font-semibold">PPI</span>
+              <span className="font-semibold truncate">PPI</span>
             </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(getVitalStatus('ppi', vitals.ppi))}`}>
+            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('ppi', vitals.ppi))}`}>
               {getVitalStatus('ppi', vitals.ppi).toUpperCase()}
             </span>
           </div>
@@ -121,9 +121,9 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Droplets className="w-5 h-5" />
-              <span className="font-semibold">Heart Rate</span>
+              <span className="font-semibold truncate">HR</span>
             </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(getVitalStatus('heartRate', vitals.heartRate))}`}>
+            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('heartRate', vitals.heartRate))}`}>
               {getVitalStatus('heartRate', vitals.heartRate).toUpperCase()}
             </span>
           </div>
@@ -136,9 +136,9 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Wind className="w-5 h-5" />
-              <span className="font-semibold">Respiratory Rate</span>
+              <span className="font-semibold truncate">RR</span>
             </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(getVitalStatus('respiratoryRate', vitals.respiratoryRate))}`}>
+            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('respiratoryRate', vitals.respiratoryRate))}`}>
               {getVitalStatus('respiratoryRate', vitals.respiratoryRate).toUpperCase()}
             </span>
           </div>
@@ -151,10 +151,10 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5" />
-              <span className="font-semibold">HRV</span>
+              <span className="font-semibold truncate">HRV</span>
             </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold ${getStatusBadge(getVitalStatus('hrv', vitals.hrv))}`}>
-              INFO
+            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('hrv', vitals.hrv))}`}>
+              {getVitalStatus('hrv', vitals.hrv).toUpperCase()}
             </span>
           </div>
           <p className="text-2xl font-bold">{vitals.hrv} <span className="text-sm font-normal">ms</span></p>

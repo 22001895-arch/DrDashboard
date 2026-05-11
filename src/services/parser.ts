@@ -136,14 +136,14 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
  * Filters out invalid/unparseable records
  */
 export function parseSubmissions(rawSubmissions: APISubmission[]): PatientSubmission[] {
-  const parsed = rawSubmissions
-    .map(parseSubmission)
+  return rawSubmissions
+    .map((raw, index) => {
+      const submission = parseSubmission(raw);
+      if (submission) {
+        // Assign a sequential queue number based on arrival order (index in API response)
+        submission.queueNumber = `Q${String(index + 1).padStart(3, '0')}`;
+      }
+      return submission;
+    })
     .filter((submission): submission is PatientSubmission => submission !== null);
-  
-  const failedCount = rawSubmissions.length - parsed.length;
-  if (failedCount > 0) {
-    console.warn(`Failed to parse ${failedCount} submission(s)`);
-  }
-  
-  return parsed;
 }

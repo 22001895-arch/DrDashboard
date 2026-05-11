@@ -4,12 +4,12 @@ import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Che
 import { useApp } from '../context/AppContext';
 import { VitalSignsDisplay } from './VitalSigns';
 
-import { 
-  formatTime, 
+import {
+  formatTime,
   getStatusColor,
   getMinutesSince,
   getTriageColor,
-  formatRegistrationNumber 
+  formatRegistrationNumber
 } from '../utils/helpers';
 
 interface PatientDetailViewProps {
@@ -19,11 +19,11 @@ interface PatientDetailViewProps {
 
 export function PatientDetailView({ patient: initialPatient, onClose }: PatientDetailViewProps) {
   const { submissions, updateStatus, attendFirst, markNotUrgent } = useApp();
-  
+
   // Get the fresh patient data from context to ensure status updates are reflected immediately
   const patient = submissions.find(p => p.id === initialPatient.id) || initialPatient;
   const waitingMinutes = getMinutesSince(patient.arrivalTime);
-  
+
   // Edit mode state for AI summary
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedSummary, setEditedSummary] = useState(patient.aiSummary);
@@ -86,7 +86,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               <div>
                 <h1 className="text-3xl font-bold">Patient {patient.queueNumber}</h1>
                 <p className="text-clinical-100 mt-1">
-                  {formatRegistrationNumber(patient.registrationNumber)} • Patient Details
+                  {patient.registrationNumber} • Patient Details
                 </p>
               </div>
             </div>
@@ -255,7 +255,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                     </span>
                   )}
                 </div>
-                
+
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2">
                   {!isEditMode ? (
@@ -269,11 +269,10 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                       </button>
                       <button
                         onClick={handleValidateAndCopy}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                          isCopied 
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isCopied
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                          }`}
                       >
                         {isCopied ? (
                           <>
@@ -307,7 +306,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                   )}
                 </div>
               </div>
-              
+
               <div className="prose max-w-none">
                 {isEditMode ? (
                   <textarea
@@ -346,7 +345,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                   <FileText className="w-5 h-5 text-clinical-600" />
                   <h2 className="text-xl font-bold text-gray-900">Clinical History</h2>
                 </div>
-                
+
                 <div className="space-y-6 text-gray-800 leading-relaxed text-sm">
                   {patient.clinicalHistoryFormatted ? (
                     <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 whitespace-pre-wrap font-sans text-gray-700 shadow-sm">
@@ -368,8 +367,8 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                       </div>
                       <div className="bg-red-50/50 p-3 rounded-lg border border-red-100/50">
                         <p className="text-sm text-red-700 font-mono">
-                          {Array.isArray(patient.details.triggeredRedFlagRuleIds) 
-                            ? patient.details.triggeredRedFlagRuleIds.join(", ") 
+                          {Array.isArray(patient.details.triggeredRedFlagRuleIds)
+                            ? patient.details.triggeredRedFlagRuleIds.join(", ")
                             : String(patient.details.triggeredRedFlagRuleIds)}
                         </p>
                       </div>

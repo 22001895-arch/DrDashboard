@@ -58,7 +58,7 @@ export function PatientCard({ patient, index }: PatientCardProps) {
           {/* Queue Number */}
           <div className="flex items-center justify-center w-12 h-12 bg-clinical-100 rounded-full">
             <span className="text-lg font-bold text-clinical-700">
-              {index + 1}
+              {patient.queueNumber}
             </span>
           </div>
 

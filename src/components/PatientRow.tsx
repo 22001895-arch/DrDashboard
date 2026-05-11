@@ -45,7 +45,7 @@ export function PatientRow({ patient, index, onViewDetails }: PatientRowProps) {
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-900">
-            Q{String(index + 1).padStart(3, '0')}
+            {patient.queueNumber}
           </span>
           {patient.isRedFlag && (
             <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" />

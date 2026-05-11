@@ -56,7 +56,7 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
                     <div className="flex items-center gap-2">
                       <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
                         <span className="text-sm font-bold text-green-700">
-                          {index + 1}
+                          {patient.queueNumber}
                         </span>
                       </div>
                       <CheckCircle2 className="w-4 h-4 text-green-600" />
