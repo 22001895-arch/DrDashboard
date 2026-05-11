@@ -1,9 +1,11 @@
-import { RefreshCw, ToggleLeft, ToggleRight } from 'lucide-react';
+import { RefreshCw, ToggleLeft, ToggleRight, LogOut } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
 import { formatRelativeTime } from '../utils/helpers';
 
 export function Header() {
   const { lastRefresh, autoRefreshEnabled, toggleAutoRefresh, manualRefresh, loading } = useApp();
+  const { doctor, logout } = useAuth();
 
   return (
     <div className="bg-gradient-to-r from-clinical-600 to-clinical-700 text-white shadow-lg">
@@ -51,9 +53,27 @@ export function Header() {
               <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
+
+            {/* Doctor Info + Logout */}
+            {doctor && (
+              <div className="flex items-center gap-3 pl-4 border-l border-white/30">
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-white">{doctor.name}</p>
+                  <p className="text-xs text-clinical-100">{doctor.department} · {doctor.staff_id}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  title="Sign out"
+                  className="flex items-center gap-1 px-3 py-2 bg-white/10 hover:bg-red-500/80 rounded-lg transition-colors text-sm"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+

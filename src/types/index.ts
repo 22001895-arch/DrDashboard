@@ -24,6 +24,13 @@ export interface APISubmission {
   hrv?: number;
   spo2?: string;
   created_at: string;            // ISO format: "2026-01-13 04:22:41"
+  // Doctor tracking fields
+  seen_by_doctor_id?: string;
+  seen_by_doctor_name?: string;
+  consultation_started_at?: string;
+  redflag_override?: boolean;
+  redflag_overridden_by_doctor_id?: string;
+  redflag_overridden_at?: string;
   // Support any additional fields
   [key: string]: any;
 }
@@ -46,10 +53,17 @@ export interface PatientSubmission {
   isPriority: boolean;       // Local state for "Attend First"
   status: PatientStatus;
   arrivalTime: Date;
-  checkoutTime?: Date;     // Time when consultation was completed
+  checkoutTime?: Date;       // Time when consultation was completed
   createdAt: string;
   // Vital signs
   vitals: VitalSigns;
+  // Doctor tracking fields (from DB)
+  seen_by_doctor_id?: string;
+  seen_by_doctor_name?: string;
+  consultation_started_at?: string;
+  redflag_override?: boolean;
+  redflag_overridden_by_doctor_id?: string;
+  redflag_overridden_at?: string;
 }
 
 export interface PatientDetails {
@@ -88,11 +102,11 @@ export interface AppState {
 // Context Actions
 export interface AppActions {
   fetchSubmissions: () => Promise<void>;
-  attendFirst: (id: number) => void;
-  markNotUrgent: (id: number) => void;
-  updateStatus: (id: number, status: PatientStatus) => void;
+  attendFirst: (id: number | string) => void;
+  markNotUrgent: (id: number | string) => void;
+  updateStatus: (id: number | string, status: PatientStatus) => void;
   toggleAutoRefresh: () => void;
   manualRefresh: () => void;
-  dismissRedFlag: (id: number) => void;
+  dismissRedFlag: (id: number | string) => void;
   dismissAllRedFlags: () => void;
 }

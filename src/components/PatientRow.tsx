@@ -82,6 +82,17 @@ export function PatientRow({ patient, index, onViewDetails }: PatientRowProps) {
         </div>
       </td>
 
+      {/* Doctor */}
+      <td className="px-4 py-4 whitespace-nowrap">
+        {patient.seen_by_doctor_name ? (
+          <span className="text-sm font-medium text-clinical-700 bg-clinical-50 px-2 py-1 rounded">
+            {patient.seen_by_doctor_name}
+          </span>
+        ) : (
+          <span className="text-sm text-gray-400 italic">Unassigned</span>
+        )}
+      </td>
+
       {/* Status */}
       <td className="px-4 py-4 whitespace-nowrap">
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(patient.status)}`}>

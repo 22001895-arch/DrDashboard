@@ -16,16 +16,24 @@ This application helps clinicians:
 - open a dedicated detail screen for each patient
 - track and update consultation status
 - review/edit/copy AI clinical summary text
+- **Doctor Authentication**: Secure login system to track clinical actions
+- **Consultation Ownership**: Records which doctor is seeing which patient
 
 ## Current Features
+
+### Authentication & Security
+- **Secure Login**: Doctors must log in to access the dashboard.
+- **Session Persistence**: Login state is saved across browser refreshes.
+- **Logout**: Safe session termination.
 
 ### Queue and Prioritization
 
 - Auto-sorted queue (priority/red-flag/status/time)
+- **Doctor Ownership**: Displays the name of the assigned doctor in the queue.
 - Red-flag highlighting in list and detail views
 - One-click actions:
-  - `Attend First` (priority bump)
-  - `Mark Not Urgent`
+  - `Attend First` (priority bump + assigned to current Dr)
+  - `Mark Not Urgent` (manual red-flag override)
 - Status flow:
   - `Waiting`
   - `In Progress`
@@ -162,12 +170,14 @@ MockEMR2/
 │   │   ├── EmptyState.tsx
 │   │   ├── Header.tsx
 │   │   ├── LoadingState.tsx
+│   │   ├── LoginPage.tsx
 │   │   ├── PatientCard.tsx
 │   │   ├── PatientDetailView.tsx
 │   │   ├── PatientRow.tsx
 │   │   └── QueueStats.tsx
 │   ├── context/
-│   │   └── AppContext.tsx
+│   │   ├── AppContext.tsx
+│   │   └── AuthContext.tsx
 │   ├── services/
 │   │   ├── api.ts
 │   │   └── parser.ts
@@ -188,24 +198,22 @@ MockEMR2/
 
 ## API Integration
 
-The application communicates with a backend API to fetch patient data.
+The application communicates with a backend API to fetch patient data and track clinical actions.
 
 **Base URL Resolution:**
 - Uses `VITE_API_BASE_URL` environment variable if set
-- Fallback: `http://localhost:3000/api` (local development)
+- Fallback: `http://localhost:5000/api` (standard backend port)
 
-**Endpoint:**
+**Endpoints:**
 ```http
-GET {VITE_API_BASE_URL}/view
+POST /api/auth/login                         # Authenticate staff
+GET  /api/view                               # Fetch queue from v_patient_queue
+POST /api/patient/:id/start-consultation     # Assign doctor to patient
+POST /api/patient/:id/override-redflag       # Manual red-flag clearance
 ```
 
-**Headers:**
-```json
-{
-  "Content-Type": "application/json"
-}
-}
-```
+**Security:**
+The dashboard uses the `VITE_HOSPITAL_API_KEY` in the `x-api-key` header for all write operations to ensure authorized access.
 
 Example item shape:
 
@@ -215,7 +223,7 @@ Example item shape:
   complaints: "[\"Fever\"]",
   details: "{...}",
   ai_summary: "...",
-  final_notes_ai: "...", // optional
+  seen_by_doctor_name: "Dr. Rahman",
   triage_zone: "YELLOW",
   red_flag: "NO",
   created_at: "2026-01-13 04:22:41"

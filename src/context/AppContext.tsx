@@ -3,6 +3,7 @@ import { PatientSubmission, PatientStatus, AppState, AppActions } from '../types
 import { apiService } from '../services/api';
 import { parseSubmissions } from '../services/parser';
 import { sortPatientQueue } from '../utils/helpers';
+import { useAuth } from './AuthContext';
 
 interface AppContextValue extends AppState, AppActions {}
 
@@ -41,6 +42,7 @@ const loadCheckoutTimes = (): Map<number | string, string> => {
 };
 
 export function AppProvider({ children }: AppProviderProps) {
+  const { doctor } = useAuth();
   const [submissions, setSubmissions] = useState<PatientSubmission[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,26 +106,34 @@ export function AppProvider({ children }: AppProviderProps) {
   }, [statusOverrides, checkoutTimes]);
 
   /**
-   * Move patient to front of queue (Attend First)
+   * Start consultation — stamps the doctor onto the patient record in DB
    */
-  const attendFirst = useCallback((id: number) => {
+  const attendFirst = useCallback((id: number | string) => {
     setSubmissions(prev => {
       const updated = prev.map(sub =>
         sub.id === id
-          ? { ...sub, isPriority: true, status: 'In Progress' as PatientStatus }
+          ? { 
+              ...sub, 
+              isPriority: true, 
+              status: 'In Progress' as PatientStatus,
+              seen_by_doctor_name: doctor?.name
+            }
           : sub
       );
       return sortPatientQueue(updated);
     });
-    
-    // Future: API call to persist priority
-    apiService.setPriority(id, true);
-  }, []);
+
+    if (doctor) {
+      apiService.startConsultation(id, doctor.id).catch(err =>
+        console.error('[API] startConsultation failed:', err)
+      );
+    }
+  }, [doctor]);
 
   /**
-   * Remove red-flag and priority status
+   * Remove red-flag and priority status — records which doctor cleared it in DB
    */
-  const markNotUrgent = useCallback((id: number) => {
+  const markNotUrgent = useCallback((id: number | string) => {
     setSubmissions(prev => {
       const updated = prev.map(sub =>
         sub.id === id
@@ -132,15 +142,18 @@ export function AppProvider({ children }: AppProviderProps) {
       );
       return sortPatientQueue(updated);
     });
-    
-    // Future: API call to remove red-flag
-    apiService.removeRedFlag(id);
-  }, []);
+
+    if (doctor) {
+      apiService.overrideRedFlag(id, doctor.id).catch(err =>
+        console.error('[API] overrideRedFlag failed:', err)
+      );
+    }
+  }, [doctor]);
 
   /**
    * Update patient status
    */
-  const updateStatus = useCallback((id: number, status: PatientStatus) => {
+  const updateStatus = useCallback((id: number | string, status: PatientStatus) => {
     // Track status override locally to persist across refreshes
     setStatusOverrides(prev => {
       const updated = new Map(prev);
@@ -162,20 +175,34 @@ export function AppProvider({ children }: AppProviderProps) {
     setSubmissions(prev => {
       const updated = prev.map(sub => {
         if (sub.id === id) {
-          // Capture checkout time when marking as Completed
+          const extraUpdates: Partial<PatientSubmission> = {};
+          
           if (status === 'Completed' && !sub.checkoutTime) {
-            return { ...sub, status, checkoutTime: new Date() };
+            extraUpdates.checkoutTime = new Date();
           }
-          return { ...sub, status };
+          
+          // Optimistically show doctor name when starting consultation
+          if (status === 'In Progress' && doctor) {
+            extraUpdates.seen_by_doctor_name = doctor.name;
+          }
+          
+          return { ...sub, status, ...extraUpdates };
         }
         return sub;
       });
       return sortPatientQueue(updated);
     });
     
-    // Future: API call to persist status
-    apiService.updateStatus(id, status);
-  }, []);
+    // API calls based on status
+    if (status === 'In Progress' && doctor) {
+      apiService.startConsultation(id, doctor.id).catch(err =>
+        console.error('[API] startConsultation failed:', err)
+      );
+    }
+    
+    // Future: API call to persist generic status
+    apiService.updateStatus(id, status).catch(err => console.error(err));
+  }, [doctor]);
 
   /**
    * Toggle auto-refresh

@@ -1,12 +1,33 @@
 import { APISubmission } from '../types';
+import { Doctor } from '../context/AuthContext';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const HOSPITAL_API_KEY = import.meta.env.VITE_HOSPITAL_API_KEY || '';
 
-const API_HEADERS = {
+const PUBLIC_HEADERS = {
   'Content-Type': 'application/json'
 };
 
+const PROTECTED_HEADERS = {
+  'Content-Type': 'application/json',
+  'x-api-key': HOSPITAL_API_KEY
+};
+
 class APIService {
+  /**
+   * Authenticate a doctor by email and password
+   */
+  async login(email: string, password: string): Promise<Doctor> {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: PUBLIC_HEADERS,
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    return data.doctor as Doctor;
+  }
+
   /**
    * Fetch all patient submissions
    */
@@ -14,7 +35,7 @@ class APIService {
     try {
       const response = await fetch(`${API_BASE_URL}/view`, {
         method: 'GET',
-        headers: API_HEADERS
+        headers: PUBLIC_HEADERS
       });
       
       if (!response.ok) {
@@ -41,30 +62,44 @@ class APIService {
       throw error;
     }
   }
-  
+
   /**
-   * Future: Update patient status
+   * Mark a patient as "In Progress" and record which doctor started the consultation
    */
-  async updateStatus(id: number, status: string): Promise<void> {
-    // POST /api/submissions/{id}/status
-    console.log(`[Future API] Update status for patient ${id} to ${status}`);
+  async startConsultation(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/start-consultation`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to start consultation');
+    }
   }
-  
+
   /**
-   * Future: Set priority flag
+   * Override the red flag status and record which doctor cleared it
    */
-  async setPriority(id: number, isPriority: boolean): Promise<void> {
-    // POST /api/submissions/{id}/priority
-    console.log(`[Future API] Set priority for patient ${id} to ${isPriority}`);
+  async overrideRedFlag(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/override-redflag`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to override red flag');
+    }
   }
-  
+
   /**
-   * Future: Mark patient as not urgent
+   * Update patient status (local only, kept for compatibility)
    */
-  async removeRedFlag(id: number): Promise<void> {
-    // POST /api/submissions/{id}/remove-red-flag
-    console.log(`[Future API] Remove red flag for patient ${id}`);
+  async updateStatus(id: number | string, status: string): Promise<void> {
+    console.log(`[API] Update status for patient ${id} to ${status}`);
   }
 }
 
 export const apiService = new APIService();
+

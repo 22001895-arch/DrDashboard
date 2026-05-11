@@ -144,6 +144,9 @@ export function DoctorDashboard() {
                           Check In
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                          Doctor
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                           Status
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
