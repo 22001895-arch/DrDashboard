@@ -5,11 +5,17 @@ import { isPendingPatient } from '../utils/helpers';
 export function QueueStats() {
   const { submissions } = useApp();
 
+  const waitingCount = submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length;
+  const inProgressCount = submissions.filter(s => s.status === 'In Progress').length;
+
   const stats = {
-    total: submissions.filter(s => !isPendingPatient(s)).length,
-    waiting: submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length,
-    inProgress: submissions.filter(s => s.status === 'In Progress').length,
-    redFlags: submissions.filter(s => s.isRedFlag && !isPendingPatient(s)).length
+    total: waitingCount + inProgressCount,
+    waiting: waitingCount,
+    inProgress: inProgressCount,
+    redFlags: submissions.filter(s => 
+      s.isRedFlag && 
+      ((s.status === 'Waiting' && !isPendingPatient(s)) || s.status === 'In Progress')
+    ).length
   };
 
   const statCards = [
