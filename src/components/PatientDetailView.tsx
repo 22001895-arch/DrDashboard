@@ -134,15 +134,15 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               </div>
             </div>
 
-            {/* Arrival Info Card */}
+            {/* Check In Info Card */}
             <div className="bg-white rounded-xl shadow-clinical p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-5 h-5 text-clinical-600" />
-                <h2 className="text-xl font-bold text-gray-900">Arrival Info</h2>
+                <h2 className="text-xl font-bold text-gray-900">Check In Info</h2>
               </div>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-500">Arrival Time</p>
+                  <p className="text-sm text-gray-500">Check In Time</p>
                   <p className="text-lg font-semibold text-gray-900">{formatTime(patient.arrivalTime)}</p>
                 </div>
                 <div>
@@ -150,12 +150,6 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                   <p className={`text-lg font-semibold ${waitingMinutes > 30 ? 'text-orange-600' : 'text-gray-900'}`}>
                     {waitingMinutes} minutes
                   </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Triage Zone</p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getTriageColor(patient.triageZone)}`}>
-                    {patient.triageZone}
-                  </span>
                 </div>
               </div>
             </div>
