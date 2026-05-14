@@ -86,7 +86,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               <div>
                 <h1 className="text-3xl font-bold">Patient {patient.queueNumber}</h1>
                 <p className="text-clinical-100 mt-1">
-                  {patient.registrationNumber} • Patient Details
+                  {formatRegistrationNumber(patient.registrationNumber)} • Patient Details
                 </p>
               </div>
             </div>

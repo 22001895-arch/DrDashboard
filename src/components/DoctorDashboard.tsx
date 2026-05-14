@@ -170,11 +170,10 @@ export function DoctorDashboard() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {submissions
                         .filter(p => p.status === 'Waiting' && !isPendingPatient(p))
-                        .map((patient, index) => (
+                        .map((patient) => (
                           <PatientRow
                             key={patient.id}
                             patient={patient}
-                            index={index}
                             onViewDetails={setSelectedPatient}
                           />
                         ))}
@@ -226,11 +225,10 @@ export function DoctorDashboard() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {submissions
                         .filter(p => p.status === 'In Progress')
-                        .map((patient, index) => (
+                        .map((patient) => (
                           <PatientRow
                             key={patient.id}
                             patient={patient}
-                            index={index}
                             onViewDetails={setSelectedPatient}
                           />
                         ))}

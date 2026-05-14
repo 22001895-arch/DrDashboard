@@ -5,6 +5,17 @@ import { parseSubmissions } from '../services/parser';
 import { sortPatientQueue } from '../utils/helpers';
 import { useAuth } from './AuthContext';
 
+const DOCTOR_STORAGE_KEY = 'idp_logged_in_doctor';
+
+/** Read doctor.id reliably — React state OR sessionStorage fallback */
+function getStoredDoctorId(): string | null {
+  try {
+    const raw = sessionStorage.getItem(DOCTOR_STORAGE_KEY);
+    if (raw) return JSON.parse(raw)?.id ?? null;
+  } catch { /* ignore */ }
+  return null;
+}
+
 interface AppContextValue extends AppState, AppActions {}
 
 const AppContext = createContext<AppContextValue | undefined>(undefined);
@@ -12,34 +23,6 @@ const AppContext = createContext<AppContextValue | undefined>(undefined);
 interface AppProviderProps {
   children: ReactNode;
 }
-
-// Restore status overrides from localStorage
-const loadStatusOverrides = (): Map<number | string, PatientStatus> => {
-  try {
-    const stored = localStorage.getItem('statusOverrides');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return new Map(parsed);
-    }
-  } catch (err) {
-    console.error('Failed to load status overrides:', err);
-  }
-  return new Map();
-};
-
-// Restore checkout times from localStorage
-const loadCheckoutTimes = (): Map<number | string, string> => {
-  try {
-    const stored = localStorage.getItem('checkoutTimes');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return new Map(parsed);
-    }
-  } catch (err) {
-    console.error('Failed to load checkout times:', err);
-  }
-  return new Map();
-};
 
 export function AppProvider({ children }: AppProviderProps) {
   const { doctor } = useAuth();
@@ -49,10 +32,6 @@ export function AppProvider({ children }: AppProviderProps) {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState<boolean>(true);
   const [newRedFlags, setNewRedFlags] = useState<PatientSubmission[]>([]);
-  // Track local status overrides to preserve them across refreshes (including page reloads)
-  const [statusOverrides, setStatusOverrides] = useState<Map<number | string, PatientStatus>>(loadStatusOverrides());
-  // Track checkout times to preserve them across refreshes
-  const [checkoutTimes, setCheckoutTimes] = useState<Map<number | string, string>>(loadCheckoutTimes());
 
   /**
    * Fetch submissions from API
@@ -65,23 +44,9 @@ export function AppProvider({ children }: AppProviderProps) {
       const rawData = await apiService.fetchSubmissions();
       const parsedData = parseSubmissions(rawData);
       
-      // Merge with local status overrides and checkout times to preserve user actions across refreshes
-      const dataWithLocalStatus = parsedData.map(patient => {
-        const localStatus = statusOverrides.get(patient.id);
-        const checkoutTimeStr = checkoutTimes.get(patient.id);
-        const updates: Partial<PatientSubmission> = {};
-        
-        if (localStatus) {
-          updates.status = localStatus;
-        }
-        if (checkoutTimeStr) {
-          updates.checkoutTime = new Date(checkoutTimeStr);
-        }
-        
-        return { ...patient, ...updates };
-      });
-      
-      const sortedData = sortPatientQueue(dataWithLocalStatus);
+      // Status now comes directly from the DB via deriveStatus() in parser.ts.
+      // No sessionStorage merge needed.
+      const sortedData = sortPatientQueue(parsedData);
       
       // Detect new red flags
       setSubmissions(prev => {
@@ -103,7 +68,7 @@ export function AppProvider({ children }: AppProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [statusOverrides, checkoutTimes]);
+  }, []);
 
   /**
    * Start consultation — stamps the doctor onto the patient record in DB
@@ -123,10 +88,13 @@ export function AppProvider({ children }: AppProviderProps) {
       return sortPatientQueue(updated);
     });
 
-    if (doctor) {
-      apiService.startConsultation(id, doctor.id).catch(err =>
+    const doctorId = doctor?.id ?? getStoredDoctorId();
+    if (doctorId) {
+      apiService.startConsultation(id, doctorId).catch(err =>
         console.error('[API] startConsultation failed:', err)
       );
+    } else {
+      console.warn('[AppContext] attendFirst: no doctor ID available, DB not updated');
     }
   }, [doctor]);
 
@@ -154,54 +122,39 @@ export function AppProvider({ children }: AppProviderProps) {
    * Update patient status
    */
   const updateStatus = useCallback((id: number | string, status: PatientStatus) => {
-    // Track status override locally to persist across refreshes
-    setStatusOverrides(prev => {
-      const updated = new Map(prev);
-      updated.set(id, status);
-      return updated;
-    });
-    
-    // Capture checkout time when marking as Completed
-    if (status === 'Completed') {
-      setCheckoutTimes(prev => {
-        const updated = new Map(prev);
-        const checkoutTimeStr = new Date().toISOString();
-        updated.set(id, checkoutTimeStr);
-        return updated;
-      });
-    }
-    
-    // Update UI immediately
+    // Optimistic UI update — show the change immediately before the API responds
     setSubmissions(prev => {
       const updated = prev.map(sub => {
-        if (sub.id === id) {
-          const extraUpdates: Partial<PatientSubmission> = {};
-          
-          if (status === 'Completed' && !sub.checkoutTime) {
-            extraUpdates.checkoutTime = new Date();
-          }
-          
-          // Optimistically show doctor name when starting consultation
-          if (status === 'In Progress' && doctor) {
-            extraUpdates.seen_by_doctor_name = doctor.name;
-          }
-          
-          return { ...sub, status, ...extraUpdates };
+        if (sub.id !== id) return sub;
+        const extraUpdates: Partial<PatientSubmission> = {};
+        if (status === 'Completed' && !sub.checkoutTime) {
+          extraUpdates.checkoutTime = new Date();
         }
-        return sub;
+        if (status === 'In Progress' && doctor) {
+          extraUpdates.seen_by_doctor_name = doctor.name;
+        }
+        return { ...sub, status, ...extraUpdates };
       });
       return sortPatientQueue(updated);
     });
-    
-    // API calls based on status
-    if (status === 'In Progress' && doctor) {
-      apiService.startConsultation(id, doctor.id).catch(err =>
-        console.error('[API] startConsultation failed:', err)
-      );
+
+    // Use doctor from React state, fall back to sessionStorage to avoid race condition
+    const doctorId = doctor?.id ?? getStoredDoctorId();
+
+    if (!doctorId) {
+      console.warn('[AppContext] updateStatus: no doctor ID — DB will not be updated!');
+      return;
     }
-    
-    // Future: API call to persist generic status
-    apiService.updateStatus(id, status).catch(err => console.error(err));
+
+    // Persist to DB via dedicated endpoints
+    if (status === 'In Progress') {
+      apiService.startConsultation(id, doctorId)
+        .catch(err => console.error('[API] startConsultation failed:', err));
+    }
+    if (status === 'Completed') {
+      apiService.completeConsultation(id, doctorId)
+        .catch(err => console.error('[API] completeConsultation failed:', err));
+    }
   }, [doctor]);
 
   /**
@@ -231,22 +184,6 @@ export function AppProvider({ children }: AppProviderProps) {
   const dismissAllRedFlags = useCallback(() => {
     setNewRedFlags([]);
   }, []);
-
-  /**
-   * Persist status overrides to localStorage
-   */
-  useEffect(() => {
-    const statusArray = Array.from(statusOverrides.entries());
-    localStorage.setItem('statusOverrides', JSON.stringify(statusArray));
-  }, [statusOverrides]);
-
-  /**
-   * Persist checkout times to localStorage
-   */
-  useEffect(() => {
-    const checkoutArray = Array.from(checkoutTimes.entries());
-    localStorage.setItem('checkoutTimes', JSON.stringify(checkoutArray));
-  }, [checkoutTimes]);
 
   /**
    * Auto-refresh every 30 seconds

@@ -18,10 +18,9 @@ import {
 
 interface PatientCardProps {
   patient: PatientSubmission;
-  index: number;
 }
 
-export function PatientCard({ patient, index }: PatientCardProps) {
+export function PatientCard({ patient }: PatientCardProps) {
   const { attendFirst, markNotUrgent, updateStatus } = useApp();
 
   const handleViewDetails = () => {

@@ -94,10 +94,27 @@ class APIService {
   }
 
   /**
-   * Update patient status (local only, kept for compatibility)
+   * Mark a consultation as completed and persist the timestamp to DB
+   */
+  async completeConsultation(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/complete-consultation`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to complete consultation');
+    }
+  }
+
+  /**
+   * Update patient status (kept for compatibility — no-op for generic calls)
    */
   async updateStatus(id: number | string, status: string): Promise<void> {
-    console.log(`[API] Update status for patient ${id} to ${status}`);
+    // Status is now persisted via startConsultation() and completeConsultation()
+    // This method is retained for interface compatibility only.
+    console.log(`[API] Status update routed via dedicated endpoints for patient ${id} → ${status}`);
   }
 }
 

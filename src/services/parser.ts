@@ -67,6 +67,17 @@ function parseVitals(raw: APISubmission): VitalSigns {
 }
 
 /**
+ * Derive patient status from the DB-persisted consultation_status field.
+ * This replaces the old sessionStorage approach so status survives
+ * page reloads, new tabs, and different devices.
+ */
+function deriveStatus(raw: APISubmission): PatientStatus {
+  if (raw.consultation_status === 'In Progress') return 'In Progress';
+  if (raw.consultation_status === 'Completed')   return 'Completed';
+  return 'Waiting';
+}
+
+/**
  * Parse raw API submission into typed PatientSubmission
  * Returns null if data is invalid or incomplete
  */
@@ -103,7 +114,7 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
     
     return {
       id: raw.id,
-      queueNumber: generateQueueNumber(raw.id),
+      queueNumber: generateQueueNumber(Number(raw.id)),
       registrationNumber,
       patientName,
       age,
@@ -116,14 +127,15 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
       triageZone: raw.triage_zone,
       isRedFlag,
       isPriority: isRedFlag, // Initially prioritized if red-flag
-      status: 'Waiting', // Default status
+      status: deriveStatus(raw), // Read from DB — source of truth
       arrivalTime: parseDate(raw.created_at),
       createdAt: raw.created_at,
       vitals: parseVitals(raw),
       clinicalHistoryFormatted: raw.clinical_history_formatted,
       seen_by_doctor_id: raw.seen_by_doctor_id,
       seen_by_doctor_name: raw.seen_by_doctor_name,
-      consultation_started_at: raw.consultation_started_at
+      consultation_started_at: raw.consultation_started_at,
+      consultation_completed_at: raw.consultation_completed_at,
     };
   } catch (error) {
     console.error(`Failed to parse submission ${raw.id}:`, error);

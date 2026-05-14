@@ -15,11 +15,10 @@ import {
 
 interface PatientRowProps {
   patient: PatientSubmission;
-  index: number;
   onViewDetails: (patient: PatientSubmission) => void;
 }
 
-export function PatientRow({ patient, index, onViewDetails }: PatientRowProps) {
+export function PatientRow({ patient, onViewDetails }: PatientRowProps) {
   const { attendFirst, markNotUrgent } = useApp();
 
   const handleAttendFirst = () => {

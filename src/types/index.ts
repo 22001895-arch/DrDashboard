@@ -28,6 +28,8 @@ export interface APISubmission {
   seen_by_doctor_id?: string;
   seen_by_doctor_name?: string;
   consultation_started_at?: string;
+  consultation_status?: 'Waiting' | 'In Progress' | 'Completed'; // DB-persisted status
+  consultation_completed_at?: string;                             // DB-persisted completion time
   clinical_history_formatted?: string;
   redflag_override?: boolean;
   redflag_overridden_by_doctor_id?: string;
@@ -63,6 +65,7 @@ export interface PatientSubmission {
   seen_by_doctor_id?: string;
   seen_by_doctor_name?: string;
   consultation_started_at?: string;
+  consultation_completed_at?: string; // DB-persisted completion timestamp
   redflag_override?: boolean;
   redflag_overridden_by_doctor_id?: string;
   redflag_overridden_at?: string;
@@ -77,6 +80,7 @@ export interface PatientDetails {
   patientName?: string;
   patientAge?: number | string;
   patientGender?: string;
+  triggeredRedFlagRuleIds?: string[] | string;
   // Additional fields from EMR form can be added here
   [key: string]: unknown;
 }

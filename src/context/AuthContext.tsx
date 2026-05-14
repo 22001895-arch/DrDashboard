@@ -25,15 +25,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Restore session from localStorage on mount
+  // Restore session from sessionStorage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = sessionStorage.getItem(STORAGE_KEY);
       if (stored) {
         setDoctor(JSON.parse(stored));
       }
     } catch {
-      localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setDoctor(data.doctor);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.doctor));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(data.doctor));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
       setAuthError(msg);
@@ -66,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     setDoctor(null);
-    localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (

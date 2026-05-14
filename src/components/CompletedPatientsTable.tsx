@@ -39,7 +39,7 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {completedPatients.map((patient, index) => {
+            {completedPatients.map((patient) => {
               const waitingMinutes = getMinutesSince(patient.arrivalTime);
               const hours = Math.floor(waitingMinutes / 60);
               const minutes = waitingMinutes % 60;
