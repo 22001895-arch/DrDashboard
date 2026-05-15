@@ -237,6 +237,40 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               )}
             </div>
 
+            {/* Red Flag Causes */}
+            {patient.isRedFlag && (patient.details?.triggeredRedFlagRules || patient.details?.triggeredRedFlagRuleIds) && (
+              <div className="bg-red-50 rounded-xl shadow-clinical p-6 border border-red-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className="w-5 h-5 text-red-500" />
+                  <h2 className="text-xl font-bold text-red-700">Red Flag Causes</h2>
+                </div>
+                <div className="space-y-2">
+                  {patient.details.triggeredRedFlagRules ? (
+                    patient.details.triggeredRedFlagRules.map((rule, idx) => (
+                      <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-red-100">
+                        <span className={`shrink-0 mt-0.5 px-2 py-0.5 rounded text-xs font-bold ${
+                          rule.priority === 'Critical'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-orange-400 text-white'
+                        }`}>
+                          {rule.priority?.toUpperCase()}
+                        </span>
+                        <span className="text-sm text-red-800 font-medium">{rule.label}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-3 bg-white rounded-lg border border-red-100">
+                      <p className="text-sm text-red-700 font-mono">
+                        {Array.isArray(patient.details.triggeredRedFlagRuleIds)
+                          ? patient.details.triggeredRedFlagRuleIds.join(', ')
+                          : String(patient.details.triggeredRedFlagRuleIds)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* AI Summary */}
             <div className="bg-white rounded-xl shadow-clinical p-6">
               <div className="flex items-center justify-between mb-4">
@@ -350,22 +384,6 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                       <FileText className="w-12 h-12 mb-4 opacity-20" />
                       <p className="font-medium">No formatted clinical history available.</p>
                       <p className="text-xs mt-2 px-6 text-center">The processing for this patient record may still be in progress.</p>
-                    </div>
-                  )}
-                  {/* Red Flag Metadata (Technical) */}
-                  {patient.details?.triggeredRedFlagRuleIds && (
-                    <div className="mt-6 pt-6 border-t border-gray-100">
-                      <div className="flex items-center gap-2 mb-3">
-                        <AlertTriangle className="w-4 h-4 text-red-500" />
-                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Triggered Red Flag Rules</h4>
-                      </div>
-                      <div className="bg-red-50/50 p-3 rounded-lg border border-red-100/50">
-                        <p className="text-sm text-red-700 font-mono">
-                          {Array.isArray(patient.details.triggeredRedFlagRuleIds)
-                            ? patient.details.triggeredRedFlagRuleIds.join(", ")
-                            : String(patient.details.triggeredRedFlagRuleIds)}
-                        </p>
-                      </div>
                     </div>
                   )}
                 </div>

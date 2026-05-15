@@ -108,13 +108,18 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
                                (details.rn as string) || 
                                `RN${String(raw.id).padStart(7, '0')}`;
     
-    // Determine red flag status - handle both new (redflag) and old (red_flag) formats
-    const redFlagValue = raw.redflag || raw.red_flag || 'No';
-    const isRedFlag = redFlagValue === 'Yes' || redFlagValue === 'YES';
+    // Determine red flag status using the SQL view's computed column is_active_redflag.
+    // This already accounts for redflag_override=TRUE, so a doctor's "Mark Not Urgent"
+    // action persists across page refreshes and auto-refresh cycles.
+    // Fallback to raw redflag field for API versions that don't include is_active_redflag.
+    const isRedFlag = raw.is_active_redflag === true || raw.is_active_redflag === 'true'
+      || (raw.is_active_redflag === undefined && (raw.redflag === 'Yes' || raw.redflag === 'YES'));
     
+    const qNum = raw.queue_number != null ? raw.queue_number : 0;
+
     return {
       id: raw.id,
-      queueNumber: generateQueueNumber(Number(raw.id)),
+      queueNumber: `Q${String(qNum).padStart(3, '0')}`,
       registrationNumber,
       patientName,
       age,
@@ -149,13 +154,6 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
  */
 export function parseSubmissions(rawSubmissions: APISubmission[]): PatientSubmission[] {
   return rawSubmissions
-    .map((raw, index) => {
-      const submission = parseSubmission(raw);
-      if (submission) {
-        // Assign a sequential queue number based on arrival order (index in API response)
-        submission.queueNumber = `Q${String(index + 1).padStart(3, '0')}`;
-      }
-      return submission;
-    })
+    .map((raw) => parseSubmission(raw))
     .filter((submission): submission is PatientSubmission => submission !== null);
 }

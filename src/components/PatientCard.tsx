@@ -71,6 +71,13 @@ export function PatientCard({ patient }: PatientCardProps) {
                 </div>
               )}
             </div>
+            {/* Show first red flag cause if available */}
+            {patient.isRedFlag && patient.details?.triggeredRedFlagRules?.[0] && (
+              <p className="text-xs text-red-600 mt-1 max-w-[200px] truncate" title={patient.details.triggeredRedFlagRules[0].label}>
+                ↳ {patient.details.triggeredRedFlagRules[0].label}
+              </p>
+            )}
+
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <span className="font-medium">{formatRegistrationNumber(patient.registrationNumber)}</span>
               <span>•</span>

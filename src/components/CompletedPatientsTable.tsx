@@ -26,12 +26,12 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
         <table className="w-full">
           <thead>
             <tr className="bg-gradient-to-r from-clinical-50 to-clinical-100 border-b-2 border-clinical-200">
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Queue</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Registration</th>
               <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Age</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Gender</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Complaints</th>
-              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Check-in</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Check-in Time</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Doctor</th>
               <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Check-out</th>
               <th className="px-6 py-4 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Duration</th>
@@ -51,15 +51,13 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
                   onClick={() => onViewDetails(patient)}
                   className="hover:bg-green-50 transition-colors cursor-pointer"
                 >
-                  {/* Queue Number */}
+                  {/* Date (Replaced Queue Number) */}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center justify-center w-8 h-8 bg-green-100 rounded-full">
-                        <span className="text-sm font-bold text-green-700">
-                          {patient.queueNumber}
-                        </span>
-                      </div>
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                      <Calendar className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm font-medium text-gray-900">
+                        {patient.arrivalTime.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                      </span>
                     </div>
                   </td>
 

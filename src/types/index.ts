@@ -34,6 +34,8 @@ export interface APISubmission {
   redflag_override?: boolean;
   redflag_overridden_by_doctor_id?: string;
   redflag_overridden_at?: string;
+  is_active_redflag?: boolean;  // Computed by v_patient_queue: redflag='Yes' AND override=FALSE
+
   // Support any additional fields
   [key: string]: any;
 }
@@ -81,6 +83,8 @@ export interface PatientDetails {
   patientAge?: number | string;
   patientGender?: string;
   triggeredRedFlagRuleIds?: string[] | string;
+  triggeredRedFlagRules?: Array<{ id: string; label: string; priority: string }>;
+
   // Additional fields from EMR form can be added here
   [key: string]: unknown;
 }

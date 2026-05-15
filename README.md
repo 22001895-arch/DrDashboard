@@ -50,6 +50,9 @@ This application helps clinicians:
 
 - Dedicated detail view per patient
 - Demographics, arrival metrics, triage zone, and complaints
+- **Mock Vitals Integration**: Real-time vital signs display (BP, HR, SpO2, Temp, Resp)
+- **Clinical History Formatting**: Parsed and structured patient symptom and comorbidity history
+- **Standalone Red Flag Causes**: Prominent visual extraction of critical alerts
 - AI clinical summary editor with:
   - edit/confirm/cancel
   - copy to clipboard (`Validate & Copy`)
