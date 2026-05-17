@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { PatientSubmission } from '../types';
 import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Check, Copy, CheckCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { apiService } from '../services/api';
 import { VitalSignsDisplay } from './VitalSigns';
 
 import {
   formatTime,
   getStatusColor,
-  getMinutesSince,
-  getTriageColor
+  getMinutesSince
 } from '../utils/helpers';
 
 interface PatientDetailViewProps {
@@ -27,6 +27,11 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedSummary, setEditedSummary] = useState(patient.aiSummary);
   const [isCopied, setIsCopied] = useState(false);
+
+  // Edit mode state for Clinical History
+  const [isHistoryEditMode, setIsHistoryEditMode] = useState(false);
+  const [editedHistory, setEditedHistory] = useState(patient.clinicalHistoryFormatted || '');
+  const [isHistoryCopied, setIsHistoryCopied] = useState(false);
 
   const handleEditClick = () => {
     setIsEditMode(true);
@@ -65,6 +70,48 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
       } catch (e) {
         console.error('Fallback copy failed:', e);
       }
+      document.body.removeChild(textArea);
+    }
+  };
+
+  const handleHistoryEditClick = () => {
+    setIsHistoryEditMode(true);
+    setEditedHistory(patient.clinicalHistoryFormatted || '');
+  };
+
+  const handleHistoryConfirmEdit = async () => {
+    try {
+      await apiService.updateClinicalHistory(patient.id, editedHistory);
+      patient.clinicalHistoryFormatted = editedHistory; // Optimistic update
+      setIsHistoryEditMode(false);
+    } catch (err) {
+      console.error('Failed to save history:', err);
+      alert('Failed to save history to database.');
+    }
+  };
+
+  const handleHistoryCancelEdit = () => {
+    setIsHistoryEditMode(false);
+    setEditedHistory(patient.clinicalHistoryFormatted || '');
+  };
+
+  const handleHistoryValidateAndCopy = async () => {
+    const textToCopy = editedHistory || patient.clinicalHistoryFormatted || '';
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setIsHistoryCopied(true);
+      setTimeout(() => setIsHistoryCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      const textArea = document.createElement('textarea');
+      textArea.value = textToCopy;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setIsHistoryCopied(true);
+        setTimeout(() => setIsHistoryCopied(false), 2000);
+      } catch (e) {}
       document.body.removeChild(textArea);
     }
   };
@@ -369,13 +416,72 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
             {/* Patient History & Details - Clinical Format */}
             {patient.details && Object.keys(patient.details).length > 0 && (
               <div className="bg-white rounded-xl shadow-clinical p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <FileText className="w-5 h-5 text-clinical-600" />
-                  <h2 className="text-xl font-bold text-gray-900">Clinical History</h2>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-clinical-600" />
+                    <h2 className="text-xl font-bold text-gray-900">Clinical History</h2>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2">
+                    {!isHistoryEditMode ? (
+                      <>
+                        <button
+                          onClick={handleHistoryEditClick}
+                          className="flex items-center gap-2 px-4 py-2 bg-clinical-100 hover:bg-clinical-200 text-clinical-700 rounded-lg font-medium transition-colors"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={handleHistoryValidateAndCopy}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${isHistoryCopied
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                            }`}
+                        >
+                          {isHistoryCopied ? (
+                            <>
+                              <CheckCheck className="w-4 h-4" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" />
+                              Validate & Copy
+                            </>
+                          )}
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={handleHistoryCancelEdit}
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleHistoryConfirmEdit}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                        >
+                          <Check className="w-4 h-4" />
+                          Confirm Edit
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-6 text-gray-800 leading-relaxed text-sm">
-                  {patient.clinicalHistoryFormatted ? (
+                  {isHistoryEditMode ? (
+                    <textarea
+                      value={editedHistory}
+                      onChange={(e) => setEditedHistory(e.target.value)}
+                      className="w-full min-h-[300px] p-4 border-2 border-clinical-300 rounded-lg focus:border-clinical-500 focus:ring-2 focus:ring-clinical-200 text-gray-700 leading-relaxed resize-y font-sans shadow-sm"
+                      placeholder="Enter clinical history..."
+                    />
+                  ) : patient.clinicalHistoryFormatted ? (
                     <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 whitespace-pre-wrap font-sans text-gray-700 shadow-sm">
                       {patient.clinicalHistoryFormatted}
                     </div>

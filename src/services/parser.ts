@@ -1,7 +1,6 @@
-import { APISubmission, PatientSubmission, PatientDetails, VitalSigns } from '../types';
+import { APISubmission, PatientSubmission, PatientDetails, VitalSigns, PatientStatus } from '../types';
 import {
   safeJSONParse,
-  generateQueueNumber,
   parseDate,
   extractPatientName,
   extractAge,
@@ -112,8 +111,8 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
     // This already accounts for redflag_override=TRUE, so a doctor's "Mark Not Urgent"
     // action persists across page refreshes and auto-refresh cycles.
     // Fallback to raw redflag field for API versions that don't include is_active_redflag.
-    const isRedFlag = raw.is_active_redflag === true || raw.is_active_redflag === 'true'
-      || (raw.is_active_redflag === undefined && (raw.redflag === 'Yes' || raw.redflag === 'YES'));
+    const isRedFlag = raw.is_active_redflag === true || (raw.is_active_redflag as any) === 'true'
+      || (raw.is_active_redflag === undefined && (raw.redflag === 'Yes' || raw.red_flag === 'YES'));
     
     return {
       id: raw.id,

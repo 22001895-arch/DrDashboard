@@ -116,6 +116,21 @@ class APIService {
     // This method is retained for interface compatibility only.
     console.log(`[API] Status update routed via dedicated endpoints for patient ${id} → ${status}`);
   }
+
+  /**
+   * Save edited clinical history to the database
+   */
+  async updateClinicalHistory(patientId: number | string, clinical_history_edited: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-history`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ clinical_history_edited }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update clinical history');
+    }
+  }
 }
 
 export const apiService = new APIService();
