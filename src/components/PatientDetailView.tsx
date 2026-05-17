@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { PatientSubmission } from '../types';
 import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Check, Copy, CheckCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -33,17 +33,33 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
   const [editedHistory, setEditedHistory] = useState(patient.clinicalHistoryFormatted || '');
   const [isHistoryCopied, setIsHistoryCopied] = useState(false);
 
+  // Sync states from DB data whenever patient is refreshed (auto-refresh or manual)
+  useEffect(() => {
+    if (!isEditMode) {
+      setEditedSummary(patient.aiSummary);
+    }
+  }, [patient.aiSummary, isEditMode]);
+
+  useEffect(() => {
+    if (!isHistoryEditMode) {
+      setEditedHistory(patient.clinicalHistoryFormatted || '');
+    }
+  }, [patient.clinicalHistoryFormatted, isHistoryEditMode]);
+
   const handleEditClick = () => {
     setIsEditMode(true);
     setEditedSummary(patient.aiSummary);
   };
 
-  const handleConfirmEdit = () => {
-    // Update the patient's AI summary (in a real app, this would call an API)
-    patient.aiSummary = editedSummary;
-    setIsEditMode(false);
-    // Future: API call to save the edited summary
-    console.log('Summary updated:', editedSummary);
+  const handleConfirmEdit = async () => {
+    try {
+      await apiService.updateAiSummary(patient.id, editedSummary);
+      patient.aiSummary = editedSummary; // Optimistic local update
+      setIsEditMode(false);
+    } catch (err) {
+      console.error('Failed to save AI summary:', err);
+      alert('Failed to save AI summary to database.');
+    }
   };
 
   const handleCancelEdit = () => {

@@ -131,6 +131,21 @@ class APIService {
       throw new Error(data.error || 'Failed to update clinical history');
     }
   }
+
+  /**
+   * Save edited AI clinical summary to the database
+   */
+  async updateAiSummary(patientId: number | string, ai_summary: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-summary`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ ai_summary }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update AI summary');
+    }
+  }
 }
 
 export const apiService = new APIService();
