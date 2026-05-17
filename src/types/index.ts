@@ -31,6 +31,8 @@ export interface APISubmission {
   consultation_status?: 'Waiting' | 'In Progress' | 'Completed'; // DB-persisted status
   consultation_completed_at?: string;                             // DB-persisted completion time
   clinical_history_formatted?: string;
+  clinical_history_edited?: string;    // Doctor-edited override; takes priority over formatted
+
   redflag_override?: boolean;
   redflag_overridden_by_doctor_id?: string;
   redflag_overridden_at?: string;
