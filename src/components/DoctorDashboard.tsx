@@ -128,11 +128,14 @@ export function DoctorDashboard() {
                     Patient Queue ({submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s)).length})
                   </h2>
                   <div className="text-sm text-gray-600">
-                    {submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s) && s.isRedFlag).length > 0 && (
-                      <span className="text-red-600 font-semibold">
-                        ⚠️ {submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s) && s.isRedFlag).length} Red Flag{submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s) && s.isRedFlag).length !== 1 ? 's' : ''}
-                      </span>
-                    )}
+                    {(() => {
+                      const waitingRedFlags = submissions.filter(s => s.status === 'Waiting' && !isPendingPatient(s) && s.isRedFlag).length;
+                      return waitingRedFlags > 0 ? (
+                        <span className="text-red-600 font-semibold">
+                          ⚠️ {waitingRedFlags} Red Flag{waitingRedFlags !== 1 ? 's' : ''}
+                        </span>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
 
