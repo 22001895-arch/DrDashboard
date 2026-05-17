@@ -101,6 +101,7 @@ export function AppProvider({ children }: AppProviderProps) {
    * Start consultation — stamps the doctor onto the patient record in DB
    */
   const attendFirst = useCallback((id: number | string) => {
+    // Optimistic update
     setSubmissions(prev => {
       const updated = prev.map(sub =>
         sub.id === id
@@ -118,18 +119,22 @@ export function AppProvider({ children }: AppProviderProps) {
 
     const doctorId = doctor?.id ?? getStoredDoctorId();
     if (doctorId) {
-      apiService.startConsultation(id, doctorId).catch(err =>
-        console.error('[API] startConsultation failed:', err)
-      );
+      apiService.startConsultation(id, doctorId).catch((err: any) => {
+        console.error('[API] startConsultation failed:', err);
+        // Revert optimistic update on conflict/error
+        alert(err.message || 'Failed to start consultation.');
+        fetchSubmissions(); // Force refresh to get true DB state
+      });
     } else {
       console.warn('[AppContext] attendFirst: no doctor ID available, DB not updated');
     }
-  }, [doctor]);
+  }, [doctor, fetchSubmissions]);
 
   /**
    * Remove red-flag and priority status — records which doctor cleared it in DB
    */
   const markNotUrgent = useCallback((id: number | string) => {
+    // Optimistic update
     setSubmissions(prev => {
       const updated = prev.map(sub =>
         sub.id === id
@@ -141,11 +146,14 @@ export function AppProvider({ children }: AppProviderProps) {
     setNewRedFlags(curr => curr.filter(p => String(p.id) !== String(id)));
 
     if (doctor) {
-      apiService.overrideRedFlag(id, doctor.id).catch(err =>
-        console.error('[API] overrideRedFlag failed:', err)
-      );
+      apiService.overrideRedFlag(id, doctor.id).catch((err: any) => {
+        console.error('[API] overrideRedFlag failed:', err);
+        // Revert on conflict (e.g. already dismissed by another doctor — harmless, just notify)
+        alert(err.message || 'Failed to dismiss red flag.');
+        fetchSubmissions();
+      });
     }
-  }, [doctor]);
+  }, [doctor, fetchSubmissions]);
 
   /**
    * Update patient status
@@ -176,16 +184,22 @@ export function AppProvider({ children }: AppProviderProps) {
       return;
     }
 
-    // Persist to DB via dedicated endpoints
+    // Persist to DB via dedicated endpoints — revert optimistic update on conflict
     if (status === 'In Progress') {
-      apiService.startConsultation(id, doctorId)
-        .catch(err => console.error('[API] startConsultation failed:', err));
+      apiService.startConsultation(id, doctorId).catch((err: any) => {
+        console.error('[API] startConsultation failed:', err);
+        alert(err.message || 'Failed to start consultation.');
+        fetchSubmissions(); // Force-refresh to restore true DB state
+      });
     }
     if (status === 'Completed') {
-      apiService.completeConsultation(id, doctorId)
-        .catch(err => console.error('[API] completeConsultation failed:', err));
+      apiService.completeConsultation(id, doctorId).catch((err: any) => {
+        console.error('[API] completeConsultation failed:', err);
+        alert(err.message || 'Failed to complete consultation.');
+        fetchSubmissions();
+      });
     }
-  }, [doctor]);
+  }, [doctor, fetchSubmissions]);
 
   /**
    * Toggle auto-refresh
