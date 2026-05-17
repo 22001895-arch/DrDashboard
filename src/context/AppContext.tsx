@@ -51,11 +51,38 @@ export function AppProvider({ children }: AppProviderProps) {
       // Detect new red flags
       setSubmissions(prev => {
         const existingIds = new Set(prev.map(s => s.id));
-        const newPatients = sortedData.filter(p => p.isRedFlag && !existingIds.has(p.id));
         
-        if (newPatients.length > 0) {
-          setNewRedFlags(curr => [...curr, ...newPatients]);
-        }
+        // Read dismissed alerts from localStorage
+        const dismissedAlertsRaw = localStorage.getItem('idp_dismissed_red_flags');
+        const dismissedAlertIds = dismissedAlertsRaw ? new Set(JSON.parse(dismissedAlertsRaw) as string[]) : new Set<string>();
+        
+        // Only trigger alerts for patients who are RED FLAG and currently WAITING and not dismissed
+        const newPatients = sortedData.filter(
+          p => p.isRedFlag && p.status === 'Waiting' && !existingIds.has(p.id) && !dismissedAlertIds.has(String(p.id))
+        );
+        
+        setNewRedFlags(curr => {
+          // Keep currently alerted red flags only if they are still active waiting red flags
+          const activeAlertIds = new Set(
+            sortedData
+              .filter(p => p.isRedFlag && p.status === 'Waiting')
+              .map(p => p.id)
+          );
+          const filteredCurr = curr.filter(p => activeAlertIds.has(p.id));
+          
+          const merged = [...filteredCurr];
+          newPatients.forEach(p => {
+            if (!merged.some(existing => existing.id === p.id)) {
+              merged.push(p);
+            }
+          });
+          return merged;
+        });
+        
+        // Auto-clean stale dismissed IDs from localStorage (keep only currently active ones)
+        const currentPatientIds = new Set(sortedData.map(p => String(p.id)));
+        const activeDismissedIds = Array.from(dismissedAlertIds).filter(id => currentPatientIds.has(id));
+        localStorage.setItem('idp_dismissed_red_flags', JSON.stringify(activeDismissedIds));
         
         return sortedData;
       });
@@ -87,6 +114,7 @@ export function AppProvider({ children }: AppProviderProps) {
       );
       return sortPatientQueue(updated);
     });
+    setNewRedFlags(curr => curr.filter(p => String(p.id) !== String(id)));
 
     const doctorId = doctor?.id ?? getStoredDoctorId();
     if (doctorId) {
@@ -110,6 +138,7 @@ export function AppProvider({ children }: AppProviderProps) {
       );
       return sortPatientQueue(updated);
     });
+    setNewRedFlags(curr => curr.filter(p => String(p.id) !== String(id)));
 
     if (doctor) {
       apiService.overrideRedFlag(id, doctor.id).catch(err =>
@@ -137,6 +166,7 @@ export function AppProvider({ children }: AppProviderProps) {
       });
       return sortPatientQueue(updated);
     });
+    setNewRedFlags(curr => curr.filter(p => String(p.id) !== String(id)));
 
     // Use doctor from React state, fall back to sessionStorage to avoid race condition
     const doctorId = doctor?.id ?? getStoredDoctorId();
@@ -174,8 +204,16 @@ export function AppProvider({ children }: AppProviderProps) {
   /**
    * Dismiss red flag notification
    */
-  const dismissRedFlag = useCallback((id: number) => {
-    setNewRedFlags(prev => prev.filter(p => p.id !== id));
+  const dismissRedFlag = useCallback((id: number | string) => {
+    setNewRedFlags(prev => prev.filter(p => String(p.id) !== String(id)));
+    
+    // Persist manual dismissal to localStorage
+    const dismissedAlertsRaw = localStorage.getItem('idp_dismissed_red_flags');
+    const dismissedAlertIds = dismissedAlertsRaw ? (JSON.parse(dismissedAlertsRaw) as string[]) : [];
+    if (!dismissedAlertIds.includes(String(id))) {
+      dismissedAlertIds.push(String(id));
+      localStorage.setItem('idp_dismissed_red_flags', JSON.stringify(dismissedAlertIds));
+    }
   }, []);
 
   /**
@@ -183,7 +221,17 @@ export function AppProvider({ children }: AppProviderProps) {
    */
   const dismissAllRedFlags = useCallback(() => {
     setNewRedFlags([]);
-  }, []);
+    
+    const dismissedAlertsRaw = localStorage.getItem('idp_dismissed_red_flags');
+    const dismissedAlertIds = dismissedAlertsRaw ? (JSON.parse(dismissedAlertsRaw) as string[]) : [];
+    
+    submissions.forEach(p => {
+      if (p.isRedFlag && p.status === 'Waiting' && !dismissedAlertIds.includes(String(p.id))) {
+        dismissedAlertIds.push(String(p.id));
+      }
+    });
+    localStorage.setItem('idp_dismissed_red_flags', JSON.stringify(dismissedAlertIds));
+  }, [submissions]);
 
   /**
    * Auto-refresh every 30 seconds
