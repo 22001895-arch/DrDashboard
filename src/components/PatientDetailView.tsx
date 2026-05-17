@@ -8,8 +8,7 @@ import {
   formatTime,
   getStatusColor,
   getMinutesSince,
-  getTriageColor,
-  formatRegistrationNumber
+  getTriageColor
 } from '../utils/helpers';
 
 interface PatientDetailViewProps {
@@ -86,7 +85,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               <div>
                 <h1 className="text-3xl font-bold">Patient {patient.queueNumber}</h1>
                 <p className="text-clinical-100 mt-1">
-                  {formatRegistrationNumber(patient.registrationNumber)} • Patient Details
+                  {patient.registrationNumber} • Patient Details
                 </p>
               </div>
             </div>
@@ -129,7 +128,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Registration Number</p>
-                  <p className="text-lg font-semibold text-gray-900">{formatRegistrationNumber(patient.registrationNumber)}</p>
+                  <p className="text-lg font-semibold text-gray-900">{patient.registrationNumber}</p>
                 </div>
               </div>
             </div>
