@@ -115,11 +115,10 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
     const isRedFlag = raw.is_active_redflag === true || raw.is_active_redflag === 'true'
       || (raw.is_active_redflag === undefined && (raw.redflag === 'Yes' || raw.redflag === 'YES'));
     
-    const qNum = raw.queue_number != null ? raw.queue_number : 0;
-
     return {
       id: raw.id,
-      queueNumber: `Q${String(qNum).padStart(3, '0')}`,
+      queueNumber: 'Q000', // placeholder — reassigned by parseSubmissions after sorting
+
       registrationNumber,
       patientName,
       age,
@@ -149,11 +148,23 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
 }
 
 /**
- * Parse array of API submissions
- * Filters out invalid/unparseable records
+ * Parse array of API submissions, then assign sequential FCFS queue numbers
+ * based on arrival time. Q001 = earliest arrival, Q002 = next, etc.
  */
 export function parseSubmissions(rawSubmissions: APISubmission[]): PatientSubmission[] {
-  return rawSubmissions
+  const parsed = rawSubmissions
     .map((raw) => parseSubmission(raw))
     .filter((submission): submission is PatientSubmission => submission !== null);
+
+  // Sort by arrival time ascending to assign queue numbers in FCFS order
+  const sorted = [...parsed].sort(
+    (a, b) => a.arrivalTime.getTime() - b.arrivalTime.getTime()
+  );
+
+  // Assign sequential queue numbers Q001, Q002, ...
+  sorted.forEach((patient, index) => {
+    patient.queueNumber = `Q${String(index + 1).padStart(3, '0')}`;
+  });
+
+  return parsed; // return original array (sortPatientQueue will reorder for display)
 }

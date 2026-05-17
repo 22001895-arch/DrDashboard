@@ -193,16 +193,7 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                     Attend First (Priority)
                   </button>
                 )}
-                {patient.status === 'Waiting' && patient.isRedFlag && (
-                  <button
-                    onClick={() => {
-                      markNotUrgent(patient.id);
-                    }}
-                    className="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
-                  >
-                    Mark Not Urgent
-                  </button>
-                )}
+
                 <button
                   onClick={onClose}
                   className="w-full px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
@@ -240,9 +231,19 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
             {/* Red Flag Causes */}
             {patient.isRedFlag && (patient.details?.triggeredRedFlagRules || patient.details?.triggeredRedFlagRuleIds) && (
               <div className="bg-red-50 rounded-xl shadow-clinical p-6 border border-red-200">
-                <div className="flex items-center gap-2 mb-4">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
-                  <h2 className="text-xl font-bold text-red-700">Red Flag Causes</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-red-500" />
+                    <h2 className="text-xl font-bold text-red-700">Red Flag Causes</h2>
+                  </div>
+                  {patient.status === 'Waiting' && (
+                    <button
+                      onClick={() => markNotUrgent(patient.id)}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors text-sm"
+                    >
+                      Mark Not Urgent
+                    </button>
+                  )}
                 </div>
                 <div className="space-y-2">
                   {patient.details.triggeredRedFlagRules ? (

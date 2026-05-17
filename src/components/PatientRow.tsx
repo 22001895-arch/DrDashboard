@@ -9,8 +9,7 @@ import { useApp } from '../context/AppContext';
 import { 
   formatTime, 
   getStatusColor,
-  getMinutesSince,
-  formatRegistrationNumber
+  getMinutesSince
 } from '../utils/helpers';
 
 interface PatientRowProps {
@@ -55,7 +54,7 @@ export function PatientRow({ patient, onViewDetails }: PatientRowProps) {
       {/* RN */}
       <td className="px-4 py-4 whitespace-nowrap">
         <span className="text-sm font-medium text-gray-900">
-          {formatRegistrationNumber(patient.registrationNumber)}
+          {patient.registrationNumber}
         </span>
       </td>
 
