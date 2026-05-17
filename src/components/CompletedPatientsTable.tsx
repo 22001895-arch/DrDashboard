@@ -40,7 +40,13 @@ export function CompletedPatientsTable({ patients, onViewDetails }: CompletedPat
           </thead>
           <tbody className="divide-y divide-gray-200">
             {completedPatients.map((patient) => {
-              const waitingMinutes = getMinutesSince(patient.arrivalTime);
+              let waitingMinutes = 0;
+              if (patient.checkoutTime && patient.arrivalTime) {
+                const diffMs = patient.checkoutTime.getTime() - patient.arrivalTime.getTime();
+                waitingMinutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+              } else {
+                waitingMinutes = getMinutesSince(patient.arrivalTime);
+              }
               const hours = Math.floor(waitingMinutes / 60);
               const minutes = waitingMinutes % 60;
               const durationDisplay = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;

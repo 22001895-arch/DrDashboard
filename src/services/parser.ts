@@ -134,6 +134,7 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
       status: deriveStatus(raw), // Read from DB — source of truth
       arrivalTime: parseDate(raw.created_at),
       createdAt: raw.created_at,
+      checkoutTime: raw.consultation_completed_at ? parseDate(raw.consultation_completed_at) : undefined,
       vitals: parseVitals(raw),
       clinicalHistoryFormatted: raw.clinical_history_formatted,
       seen_by_doctor_id: raw.seen_by_doctor_id,
