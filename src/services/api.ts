@@ -127,7 +127,7 @@ class APIService {
       body: JSON.stringify({ clinical_history_edited }),
     });
     if (!response.ok) {
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       throw new Error(data.error || 'Failed to update clinical history');
     }
   }
@@ -142,7 +142,7 @@ class APIService {
       body: JSON.stringify({ ai_summary }),
     });
     if (!response.ok) {
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
       throw new Error(data.error || 'Failed to update AI summary');
     }
   }

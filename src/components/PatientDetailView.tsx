@@ -56,9 +56,9 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
       await apiService.updateAiSummary(patient.id, editedSummary);
       patient.aiSummary = editedSummary; // Optimistic local update
       setIsEditMode(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save AI summary:', err);
-      alert('Failed to save AI summary to database.');
+      alert(err.message || 'Failed to save AI summary to database.');
     }
   };
 
@@ -100,9 +100,9 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
       await apiService.updateClinicalHistory(patient.id, editedHistory);
       patient.clinicalHistoryFormatted = editedHistory; // Optimistic update
       setIsHistoryEditMode(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to save history:', err);
-      alert('Failed to save history to database.');
+      alert(err.message || 'Failed to save history to database.');
     }
   };
 
