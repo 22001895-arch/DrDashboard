@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PatientSubmission } from '../types';
 import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Check, Copy, CheckCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -17,7 +17,7 @@ interface PatientDetailViewProps {
 }
 
 export function PatientDetailView({ patient: initialPatient, onClose }: PatientDetailViewProps) {
-  const { submissions, updateStatus, attendFirst, markNotUrgent } = useApp();
+  const { submissions, updateStatus, attendFirst, markNotUrgent, autoRefreshEnabled, toggleAutoRefresh } = useApp();
 
   // Get the fresh patient data from context to ensure status updates are reflected immediately
   const patient = submissions.find(p => p.id === initialPatient.id) || initialPatient;
@@ -45,6 +45,30 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
       setEditedHistory(patient.clinicalHistoryFormatted || '');
     }
   }, [patient.clinicalHistoryFormatted, isHistoryEditMode]);
+
+  // Pause auto-refresh when in edit mode to prevent interruption
+  const didPauseRef = useRef(false);
+
+  useEffect(() => {
+    const isEditing = isEditMode || isHistoryEditMode;
+    
+    if (isEditing && autoRefreshEnabled && !didPauseRef.current) {
+      toggleAutoRefresh();
+      didPauseRef.current = true;
+    } else if (!isEditing && didPauseRef.current && !autoRefreshEnabled) {
+      toggleAutoRefresh();
+      didPauseRef.current = false;
+    }
+  }, [isEditMode, isHistoryEditMode, autoRefreshEnabled, toggleAutoRefresh]);
+
+  // Cleanup on unmount to ensure auto-refresh is restored
+  useEffect(() => {
+    return () => {
+      if (didPauseRef.current) {
+        toggleAutoRefresh();
+      }
+    };
+  }, [toggleAutoRefresh]);
 
   const handleEditClick = () => {
     setIsEditMode(true);
