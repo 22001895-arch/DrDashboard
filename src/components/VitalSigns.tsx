@@ -50,19 +50,13 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
     }
   };
 
+  const showPPI = typeof vitals.ppi === 'number' && !isNaN(vitals.ppi);
+  const showHRV = typeof vitals.hrv === 'number' && !isNaN(vitals.hrv);
+  const showRhythm = typeof vitals.heartBeatRhythm === 'string' && vitals.heartBeatRhythm.trim() !== '';
+
   if (layout === 'compact') {
     return (
       <div className="grid grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
-        {/* Pulse Rate (PPI) */}
-        <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('ppi', vitals.ppi))}`}>
-          <div className="flex items-center gap-2 mb-1">
-            <Heart className="w-4 h-4" />
-            <span className="text-xs font-semibold truncate">PPI</span>
-          </div>
-          <p className="text-lg font-bold">{typeof vitals.ppi === 'number' ? vitals.ppi.toFixed(2) : vitals.ppi}</p>
-          <p className="text-xs opacity-75"></p>
-        </div>
-
         {/* Heart Rate */}
         <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('heartRate', vitals.heartRate))}`}>
           <div className="flex items-center gap-2 mb-1">
@@ -83,15 +77,41 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <p className="text-xs opacity-75">/min</p>
         </div>
 
-        {/* Heart Rate Variability */}
-        <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('hrv', vitals.hrv))}`}>
-          <div className="flex items-center gap-2 mb-1">
-            <Activity className="w-4 h-4" />
-            <span className="text-xs font-semibold truncate">HRV</span>
+        {/* Heart Beat Rhythm */}
+        {showRhythm && (
+          <div className="p-3 rounded-lg border bg-blue-50 border-blue-300 text-blue-800">
+            <div className="flex items-center gap-2 mb-1">
+              <Activity className="w-4 h-4" />
+              <span className="text-xs font-semibold truncate">Rhythm</span>
+            </div>
+            <p className="text-lg font-bold truncate" title={vitals.heartBeatRhythm}>{vitals.heartBeatRhythm}</p>
+            <p className="text-xs opacity-75">status</p>
           </div>
-          <p className="text-lg font-bold">{vitals.hrv}</p>
-          <p className="text-xs opacity-75">ms</p>
-        </div>
+        )}
+
+        {/* Pulse Rate (PPI) */}
+        {showPPI && (
+          <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('ppi', vitals.ppi!))}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Heart className="w-4 h-4" />
+              <span className="text-xs font-semibold truncate">PPI</span>
+            </div>
+            <p className="text-lg font-bold">{vitals.ppi!.toFixed(2)}</p>
+            <p className="text-xs opacity-75"></p>
+          </div>
+        )}
+
+        {/* Heart Rate Variability */}
+        {showHRV && (
+          <div className={`p-3 rounded-lg border ${getStatusColor(getVitalStatus('hrv', vitals.hrv!))}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Activity className="w-4 h-4" />
+              <span className="text-xs font-semibold truncate">HRV</span>
+            </div>
+            <p className="text-lg font-bold">{vitals.hrv}</p>
+            <p className="text-xs opacity-75">ms</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -101,21 +121,6 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-gray-700">Vital Signs</h3>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Pulse Rate (PPI) */}
-        <div className={`p-4 rounded-lg border-2 ${getStatusColor(getVitalStatus('ppi', vitals.ppi))}`}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Heart className="w-5 h-5" />
-              <span className="font-semibold truncate">PPI</span>
-            </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('ppi', vitals.ppi))}`}>
-              {getVitalStatus('ppi', vitals.ppi).toUpperCase()}
-            </span>
-          </div>
-          <p className="text-2xl font-bold">{typeof vitals.ppi === 'number' ? vitals.ppi.toFixed(2) : vitals.ppi}</p>
-          <p className="text-xs mt-1 opacity-75">Pulse Pressure Index</p>
-        </div>
-
         {/* Heart Rate */}
         <div className={`p-4 rounded-lg border-2 ${getStatusColor(getVitalStatus('heartRate', vitals.heartRate))}`}>
           <div className="flex items-center justify-between mb-2">
@@ -146,20 +151,56 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
           <p className="text-xs mt-1 opacity-75">Normal range: 12-20 /min</p>
         </div>
 
-        {/* Heart Rate Variability */}
-        <div className={`p-4 rounded-lg border-2 ${getStatusColor(getVitalStatus('hrv', vitals.hrv))}`}>
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              <span className="font-semibold truncate">HRV</span>
+        {/* Heart Beat Rhythm */}
+        {showRhythm && (
+          <div className="p-4 rounded-lg border-2 bg-blue-50 border-blue-300 text-blue-800">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                <span className="font-semibold truncate">Rhythm</span>
+              </div>
+              <span className="px-2 py-1 rounded text-xs font-semibold shrink-0 bg-blue-500 text-white">
+                RHYTHM
+              </span>
             </div>
-            <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('hrv', vitals.hrv))}`}>
-              {getVitalStatus('hrv', vitals.hrv).toUpperCase()}
-            </span>
+            <p className="text-2xl font-bold truncate" title={vitals.heartBeatRhythm}>{vitals.heartBeatRhythm}</p>
+            <p className="text-xs mt-1 opacity-75">Cardiac rhythm status</p>
           </div>
-          <p className="text-2xl font-bold">{vitals.hrv} <span className="text-sm font-normal">ms</span></p>
-          <p className="text-xs mt-1 opacity-75">Heart rate variability indicator</p>
-        </div>
+        )}
+
+        {/* Pulse Rate (PPI) */}
+        {showPPI && (
+          <div className={`p-4 rounded-lg border-2 ${getStatusColor(getVitalStatus('ppi', vitals.ppi!))}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5" />
+                <span className="font-semibold truncate">PPI</span>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('ppi', vitals.ppi!))}`}>
+                {getVitalStatus('ppi', vitals.ppi!).toUpperCase()}
+              </span>
+            </div>
+            <p className="text-2xl font-bold">{vitals.ppi!.toFixed(2)}</p>
+            <p className="text-xs mt-1 opacity-75">Pulse Pressure Index</p>
+          </div>
+        )}
+
+        {/* Heart Rate Variability */}
+        {showHRV && (
+          <div className={`p-4 rounded-lg border-2 ${getStatusColor(getVitalStatus('hrv', vitals.hrv!))}`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                <span className="font-semibold truncate">HRV</span>
+              </div>
+              <span className={`px-2 py-1 rounded text-xs font-semibold shrink-0 ${getStatusBadge(getVitalStatus('hrv', vitals.hrv!))}`}>
+                {getVitalStatus('hrv', vitals.hrv!).toUpperCase()}
+              </span>
+            </div>
+            <p className="text-2xl font-bold">{vitals.hrv} <span className="text-sm font-normal">ms</span></p>
+            <p className="text-xs mt-1 opacity-75">Heart rate variability indicator</p>
+          </div>
+        )}
       </div>
     </div>
   );

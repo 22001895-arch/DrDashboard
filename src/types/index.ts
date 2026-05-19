@@ -1,9 +1,10 @@
 // API Response Types
 export interface VitalSigns {
-  ppi: number;               // Pulse/Pulse Pressure Index
+  ppi?: number;               // Pulse/Pulse Pressure Index (legacy/optional)
   heartRate: number;         // Heart rate in bpm (from central server)
   respiratoryRate: number;   // Breaths per minute
-  hrv: number;               // Heart Rate Variability
+  hrv?: number;               // Heart Rate Variability (legacy/optional)
+  heartBeatRhythm?: string;   // Heart beat rhythm status (e.g. "Normal", "Irregular")
 }
 
 export interface APISubmission {
@@ -19,10 +20,11 @@ export interface APISubmission {
   final_notes_ai?: string;       // AI-processed patient notes
   // Vital signs - supports multiple field name variations
   ppi?: number;
-  heart_rate?: number;           // Primary heart rate field from central server
-  respiratory_rate?: number;
+  heart_rate?: number | string;   // Primary heart rate field from central server (supports str/num)
+  respiratory_rate?: number | string; // Primary respiratory rate (supports str/num)
   hrv?: number;
   spo2?: string;
+  heart_beat_rhythm?: string;     // Added for new rPPG payload
   created_at: string;            // ISO format: "2026-01-13 04:22:41"
   // Doctor tracking fields
   seen_by_doctor_id?: string;

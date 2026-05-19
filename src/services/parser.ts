@@ -17,7 +17,7 @@ function parseVitals(raw: APISubmission): VitalSigns {
   if (typeof ppiValue === 'string') {
     ppiValue = parseFloat(ppiValue);
   }
-  const ppi = typeof ppiValue === 'number' && !isNaN(ppiValue) ? ppiValue : 0;
+  const ppi = typeof ppiValue === 'number' && !isNaN(ppiValue) ? ppiValue : undefined;
   
   // Extract heart_rate - this is the PRIMARY field from central server
   let heartRateValue = raw.heart_rate;
@@ -42,13 +42,16 @@ function parseVitals(raw: APISubmission): VitalSigns {
   if (typeof hrvValue === 'string') {
     hrvValue = parseInt(hrvValue, 10);
   }
-  const hrv = typeof hrvValue === 'number' && !isNaN(hrvValue) ? hrvValue : 0;
+  const hrv = typeof hrvValue === 'number' && !isNaN(hrvValue) ? hrvValue : undefined;
   
+  const heartBeatRhythm = raw.heart_beat_rhythm || undefined;
+
   const vitals: VitalSigns = {
     ppi,
     heartRate,
     respiratoryRate,
-    hrv
+    hrv,
+    heartBeatRhythm
   };
   
   // Detailed debug logging
@@ -57,7 +60,8 @@ function parseVitals(raw: APISubmission): VitalSigns {
       ppi: raw.ppi,
       heart_rate: raw.heart_rate,
       respiratory_rate: raw.respiratory_rate,
-      hrv: raw.hrv
+      hrv: raw.hrv,
+      heart_beat_rhythm: raw.heart_beat_rhythm
     },
     parsed_vitals: vitals
   });
