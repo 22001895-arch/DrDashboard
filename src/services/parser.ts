@@ -12,22 +12,22 @@ import {
  * Handles multiple possible field name variations from different API versions
  */
 function parseVitals(raw: APISubmission): VitalSigns {
-  // Parse PPI - use parseFloat to preserve decimals (e.g., 0.91)
-  let ppiValue = raw.ppi;
-  if (typeof ppiValue === 'string') {
-    ppiValue = parseFloat(ppiValue);
+  // Parse SPO2 - support raw.spo2 or raw.ppi (legacy fallback)
+  let spo2Value = raw.spo2 !== undefined ? raw.spo2 : raw.ppi;
+  if (typeof spo2Value === 'string') {
+    spo2Value = parseFloat(spo2Value);
   }
-  const ppi = typeof ppiValue === 'number' && !isNaN(ppiValue) ? ppiValue : undefined;
+  let spo2 = typeof spo2Value === 'number' && !isNaN(spo2Value) ? spo2Value : undefined;
+  // If SpO2 is formatted as a fraction/decimal from legacy PPI (e.g. 0.98), scale it to a percentage
+  if (spo2 !== undefined && spo2 <= 1) {
+    spo2 = Math.round(spo2 * 100);
+  }
   
   // Extract heart_rate - this is the PRIMARY field from central server
   let heartRateValue = raw.heart_rate;
-  
-  // Convert to number if string
   if (typeof heartRateValue === 'string') {
     heartRateValue = parseInt(heartRateValue, 10);
   }
-  
-  // Ensure it's a number
   const heartRate = typeof heartRateValue === 'number' && !isNaN(heartRateValue) ? heartRateValue : 0;
   
   // Parse respiratory rate
@@ -37,27 +37,43 @@ function parseVitals(raw: APISubmission): VitalSigns {
   }
   const respiratoryRate = typeof respiratoryValue === 'number' && !isNaN(respiratoryValue) ? respiratoryValue : 0;
   
-  // Parse HRV
+  // Parse HRV (legacy/optional)
   let hrvValue = raw.hrv;
   if (typeof hrvValue === 'string') {
     hrvValue = parseInt(hrvValue, 10);
   }
   const hrv = typeof hrvValue === 'number' && !isNaN(hrvValue) ? hrvValue : undefined;
   
+  // Pulse pressure index (legacy/optional)
+  let ppiValue = raw.ppi;
+  if (typeof ppiValue === 'string') {
+    ppiValue = parseFloat(ppiValue);
+  }
+  const ppi = typeof ppiValue === 'number' && !isNaN(ppiValue) ? ppiValue : undefined;
+  
+  // Get heart beat rhythm directly from database column `heart_beat_rhythm`
   const heartBeatRhythm = raw.heart_beat_rhythm || undefined;
 
+  // BP Hardcoded to 100 SBP and 80 DBP respectively
+  const bpSbp = 100;
+  const bpDbp = 80;
+
   const vitals: VitalSigns = {
-    ppi,
+    spo2,
     heartRate,
     respiratoryRate,
-    hrv,
-    heartBeatRhythm
+    heartBeatRhythm,
+    bpSbp,
+    bpDbp,
+    ppi,
+    hrv
   };
   
   // Detailed debug logging
   console.log(`[Vitals Parser] Patient ${raw.id}:`, {
     raw_fields: {
       ppi: raw.ppi,
+      spo2: raw.spo2,
       heart_rate: raw.heart_rate,
       respiratory_rate: raw.respiratory_rate,
       hrv: raw.hrv,

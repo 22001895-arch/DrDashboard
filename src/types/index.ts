@@ -1,10 +1,13 @@
 // API Response Types
 export interface VitalSigns {
-  ppi?: number;               // Pulse/Pulse Pressure Index (legacy/optional)
+  spo2?: number;              // Oxygen saturation percentage (replaces PPI)
   heartRate: number;         // Heart rate in bpm (from central server)
   respiratoryRate: number;   // Breaths per minute
-  hrv?: number;               // Heart Rate Variability (legacy/optional)
   heartBeatRhythm?: string;   // Heart beat rhythm status (e.g. "Normal", "Irregular")
+  bpSbp: number;              // Blood Pressure Systolic (hardcoded 100)
+  bpDbp: number;              // Blood Pressure Diastolic (hardcoded 80)
+  ppi?: number;               // Pulse Pressure Index (legacy/optional)
+  hrv?: number;               // Heart Rate Variability (legacy/optional)
 }
 
 export interface APISubmission {
