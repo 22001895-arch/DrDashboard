@@ -32,6 +32,7 @@ export function AppProvider({ children }: AppProviderProps) {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState<boolean>(true);
   const [newRedFlags, setNewRedFlags] = useState<PatientSubmission[]>([]);
+  const [labNotifications, setLabNotifications] = useState<PatientSubmission[]>([]);
 
   /**
    * Fetch submissions from API
@@ -191,14 +192,46 @@ export function AppProvider({ children }: AppProviderProps) {
         alert(err.message || 'Failed to start consultation.');
         fetchSubmissions(); // Force-refresh to restore true DB state
       });
-    }
-    if (status === 'Completed') {
+    } else if (status === 'Completed') {
       apiService.completeConsultation(id, doctorId).catch((err: any) => {
         console.error('[API] completeConsultation failed:', err);
         alert(err.message || 'Failed to complete consultation.');
         fetchSubmissions();
       });
+    } else {
+      // For all other statuses like 'Waiting for Further Consultation' or 'Waiting for Lab Report'
+      apiService.updateStatus(id, status, doctorId).catch((err: any) => {
+        console.error('[API] updateStatus failed:', err);
+        alert(err.message || 'Failed to update consultation status.');
+        fetchSubmissions();
+      });
     }
+  }, [doctor, fetchSubmissions]);
+
+  /**
+   * Order lab tests
+   */
+  const orderLabs = useCallback((id: number | string, labs: string[]) => {
+    setSubmissions(prev => {
+      const updated = prev.map(sub =>
+        sub.id === id
+          ? { ...sub, status: 'Waiting for Lab Report', orderedLabs: Array.from(new Set([...(sub.orderedLabs || []), ...labs])) }
+          : sub
+      );
+      return sortPatientQueue(updated);
+    });
+
+    const doctorId = doctor?.id ?? getStoredDoctorId();
+    if (!doctorId) {
+      console.warn('[AppContext] orderLabs: no doctor ID — DB will not be updated!');
+      return;
+    }
+
+    apiService.orderLabs(id, doctorId, labs).catch((err: any) => {
+      console.error('[API] orderLabs failed:', err);
+      alert(err.message || 'Failed to order labs.');
+      fetchSubmissions();
+    });
   }, [doctor, fetchSubmissions]);
 
   /**
@@ -248,6 +281,24 @@ export function AppProvider({ children }: AppProviderProps) {
   }, [submissions]);
 
   /**
+   * Lab Notifications
+   */
+  const addLabNotification = useCallback((patient: PatientSubmission) => {
+    setLabNotifications(prev => {
+      if (prev.some(p => p.id === patient.id)) return prev;
+      return [...prev, patient];
+    });
+  }, []);
+
+  const dismissLabNotification = useCallback((id: number | string) => {
+    setLabNotifications(prev => prev.filter(p => p.id !== id));
+  }, []);
+
+  const dismissAllLabNotifications = useCallback(() => {
+    setLabNotifications([]);
+  }, []);
+
+  /**
    * Auto-refresh every 30 seconds
    */
   useEffect(() => {
@@ -274,6 +325,7 @@ export function AppProvider({ children }: AppProviderProps) {
     lastRefresh,
     autoRefreshEnabled,
     newRedFlags,
+    labNotifications,
     fetchSubmissions,
     attendFirst,
     markNotUrgent,
@@ -281,7 +333,11 @@ export function AppProvider({ children }: AppProviderProps) {
     toggleAutoRefresh,
     manualRefresh,
     dismissRedFlag,
-    dismissAllRedFlags
+    dismissAllRedFlags,
+    orderLabs,
+    addLabNotification,
+    dismissLabNotification,
+    dismissAllLabNotifications
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

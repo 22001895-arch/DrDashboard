@@ -4,6 +4,7 @@ import { X, Calendar, User, Activity, AlertTriangle, FileText, Brain, Edit3, Che
 import { useApp } from '../context/AppContext';
 import { apiService } from '../services/api';
 import { VitalSignsDisplay } from './VitalSigns';
+import { LaboratoryOrderPanel } from './LaboratoryOrderPanel';
 
 import {
   formatTime,
@@ -17,7 +18,7 @@ interface PatientDetailViewProps {
 }
 
 export function PatientDetailView({ patient: initialPatient, onClose }: PatientDetailViewProps) {
-  const { submissions, updateStatus, attendFirst, markNotUrgent, autoRefreshEnabled, toggleAutoRefresh } = useApp();
+  const { submissions, updateStatus, attendFirst, markNotUrgent, autoRefreshEnabled, toggleAutoRefresh, addLabNotification } = useApp();
 
   // Get the fresh patient data from context to ensure status updates are reflected immediately
   const patient = submissions.find(p => p.id === initialPatient.id) || initialPatient;
@@ -261,11 +262,38 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                   </button>
                 )}
                 {patient.status === 'In Progress' && (
+                  <>
+                    <button
+                      onClick={() => updateStatus(patient.id, 'Waiting for Further Consultation')}
+                      className="w-full px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Order Next Consultation
+                    </button>
+                    <button
+                      onClick={() => updateStatus(patient.id, 'Completed')}
+                      className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Mark as Completed
+                    </button>
+                  </>
+                )}
+                {patient.status === 'Waiting for Lab Report' && (
                   <button
-                    onClick={() => updateStatus(patient.id, 'Completed')}
-                    className="w-full px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                    onClick={() => {
+                      updateStatus(patient.id, 'Waiting for Further Consultation');
+                      addLabNotification(patient);
+                    }}
+                    className="w-full px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg font-medium transition-colors"
                   >
-                    Mark as Completed
+                    Lab Report Ready
+                  </button>
+                )}
+                {patient.status === 'Waiting for Further Consultation' && (
+                  <button
+                    onClick={() => updateStatus(patient.id, 'In Progress')}
+                    className="w-full px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                  >
+                    Resume Consultation
                   </button>
                 )}
                 {patient.status === 'Waiting' && patient.isRedFlag && !patient.isPriority && (
@@ -288,6 +316,28 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
                 </button>
               </div>
             </div>
+
+            {/* Order for Lab Test Panel */}
+            {patient.status === 'In Progress' && (
+              <LaboratoryOrderPanel patientId={patient.id} onClose={onClose} />
+            )}
+
+            {/* Display Ordered Labs */}
+            {patient.orderedLabs && patient.orderedLabs.length > 0 && (
+              <div className="bg-white rounded-xl shadow-clinical p-6 border-t-4 border-purple-500">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity className="w-5 h-5 text-purple-600" />
+                  <h2 className="text-xl font-bold text-gray-900">Ordered Labs</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {patient.orderedLabs.map((test, idx) => (
+                    <span key={idx} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-md font-medium text-sm border border-purple-200">
+                      {test}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Right Column - Clinical Info */}

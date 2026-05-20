@@ -93,6 +93,8 @@ function parseVitals(raw: APISubmission): VitalSigns {
 function deriveStatus(raw: APISubmission): PatientStatus {
   if (raw.consultation_status === 'In Progress') return 'In Progress';
   if (raw.consultation_status === 'Completed')   return 'Completed';
+  if (raw.consultation_status === 'Waiting for Lab Report') return 'Waiting for Lab Report';
+  if (raw.consultation_status === 'Waiting for Further Consultation') return 'Waiting for Further Consultation';
   return 'Waiting';
 }
 
@@ -160,6 +162,7 @@ export function parseSubmission(raw: APISubmission): PatientSubmission | null {
       seen_by_doctor_name: raw.seen_by_doctor_name,
       consultation_started_at: raw.consultation_started_at,
       consultation_completed_at: raw.consultation_completed_at,
+      orderedLabs: raw.ordered_labs || [],
     };
   } catch (error) {
     console.error(`Failed to parse submission ${raw.id}:`, error);

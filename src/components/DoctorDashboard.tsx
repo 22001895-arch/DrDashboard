@@ -9,14 +9,14 @@ import { EmptyState } from './EmptyState';
 import { PatientRow } from './PatientRow';
 import { PatientDetailView } from './PatientDetailView';
 import { CompletedPatientsTable } from './CompletedPatientsTable';
-import { Clock, CheckCircle2, Stethoscope } from 'lucide-react';
+import { Clock, CheckCircle2, Stethoscope, FlaskConical, CalendarClock } from 'lucide-react';
 import { isPendingPatient } from '../utils/helpers';
 
 
 export function DoctorDashboard() {
-  const { submissions, loading, error, manualRefresh, newRedFlags, dismissRedFlag, dismissAllRedFlags } = useApp();
+  const { submissions, loading, error, manualRefresh, newRedFlags, dismissRedFlag, dismissAllRedFlags, labNotifications, dismissLabNotification, dismissAllLabNotifications } = useApp();
   const [selectedPatient, setSelectedPatient] = useState<PatientSubmission | null>(null);
-  const [activeView, setActiveView] = useState<'waiting' | 'in-progress' | 'completed'>('waiting');
+  const [activeView, setActiveView] = useState<'waiting' | 'in-progress' | 'completed' | 'lab-report' | 'further-consultation'>('waiting');
 
   // If a patient is selected, show the detail view
   if (selectedPatient) {
@@ -39,7 +39,7 @@ export function DoctorDashboard() {
             {newRedFlags.map(patient => (
               <AlertBanner
                 key={patient.id}
-                message={`🚨 NEW RED FLAG: ${patient.patientName} (${patient.age}/${patient.gender}) - ${patient.complaints.join(', ')}`}
+                message={`🚨 NEW RED FLAG: ${patient.patientName && patient.patientName !== 'Unknown Patient' ? patient.patientName : `Patient ${patient.registrationNumber}`} (${patient.age}/${patient.gender}) - ${patient.complaints.join(', ')}`}
                 type="warning"
                 onDismiss={() => dismissRedFlag(patient.id)}
               />
@@ -50,6 +50,28 @@ export function DoctorDashboard() {
                 className="text-sm text-gray-600 hover:text-gray-800 underline"
               >
                 Dismiss all red flag alerts
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Lab Notifications */}
+        {labNotifications.length > 0 && (
+          <div className="mb-6 space-y-2">
+            {labNotifications.map(patient => (
+              <AlertBanner
+                key={patient.id}
+                message={`🔬 Patient ${patient.registrationNumber}'s lab report is ready. Find them in the Waiting for Further Consultation list.`}
+                type="info"
+                onDismiss={() => dismissLabNotification(patient.id)}
+              />
+            ))}
+            {labNotifications.length > 1 && (
+              <button
+                onClick={dismissAllLabNotifications}
+                className="text-sm text-gray-600 hover:text-gray-800 underline"
+              >
+                Dismiss all lab notifications
               </button>
             )}
           </div>
@@ -103,6 +125,32 @@ export function DoctorDashboard() {
                 In Consultation
                 <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full">
                   {submissions.filter(s => s.status === 'In Progress').length}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveView('lab-report')}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${activeView === 'lab-report'
+                  ? 'border-purple-600 text-purple-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
+              >
+                <FlaskConical className="w-5 h-5" />
+                Waiting for Lab Report
+                <span className="ml-2 px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-full">
+                  {submissions.filter(s => s.status === 'Waiting for Lab Report').length}
+                </span>
+              </button>
+              <button
+                onClick={() => setActiveView('further-consultation')}
+                className={`flex items-center gap-2 px-6 py-3 font-medium border-b-2 transition-colors ${activeView === 'further-consultation'
+                  ? 'border-teal-600 text-teal-600'
+                  : 'border-transparent text-gray-600 hover:text-gray-800'
+                  }`}
+              >
+                <CalendarClock className="w-5 h-5" />
+                Waiting for Further Consultation
+                <span className="ml-2 px-2 py-1 bg-teal-100 text-teal-700 text-xs font-bold rounded-full">
+                  {submissions.filter(s => s.status === 'Waiting for Further Consultation').length}
                 </span>
               </button>
               <button
@@ -199,41 +247,91 @@ export function DoctorDashboard() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-blue-600">
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Queue #
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          RN
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                          Age
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Gender
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Check In
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Doctor
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Status
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                          Action
-                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Queue #</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">RN</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Age</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Gender</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Check In</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Doctor</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Action</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {submissions
                         .filter(p => p.status === 'In Progress')
                         .map((patient) => (
-                          <PatientRow
-                            key={patient.id}
-                            patient={patient}
-                            onViewDetails={setSelectedPatient}
-                          />
+                          <PatientRow key={patient.id} patient={patient} onViewDetails={setSelectedPatient} />
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Tab Content - Waiting for Lab Report */}
+            {activeView === 'lab-report' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Waiting for Lab Report ({submissions.filter(s => s.status === 'Waiting for Lab Report').length})
+                  </h2>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-clinical overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-purple-600">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Queue #</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">RN</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Age</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Gender</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Check In</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Doctor</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {submissions
+                        .filter(p => p.status === 'Waiting for Lab Report')
+                        .map((patient) => (
+                          <PatientRow key={patient.id} patient={patient} onViewDetails={setSelectedPatient} />
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Tab Content - Waiting for Further Consultation */}
+            {activeView === 'further-consultation' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Waiting for Further Consultation ({submissions.filter(s => s.status === 'Waiting for Further Consultation').length})
+                  </h2>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-clinical overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-teal-600">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Queue #</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">RN</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">Age</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Gender</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Check In</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Doctor</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {submissions
+                        .filter(p => p.status === 'Waiting for Further Consultation')
+                        .map((patient) => (
+                          <PatientRow key={patient.id} patient={patient} onViewDetails={setSelectedPatient} />
                         ))}
                     </tbody>
                   </table>

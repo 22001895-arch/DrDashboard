@@ -109,12 +109,33 @@ class APIService {
   }
 
   /**
-   * Update patient status (kept for compatibility — no-op for generic calls)
+   * Update patient status generically
    */
-  async updateStatus(id: number | string, status: string): Promise<void> {
-    // Status is now persisted via startConsultation() and completeConsultation()
-    // This method is retained for interface compatibility only.
-    console.log(`[API] Status update routed via dedicated endpoints for patient ${id} → ${status}`);
+  async updateStatus(patientId: number | string, status: string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-status`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId, status }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update status');
+    }
+  }
+
+  /**
+   * Order lab tests
+   */
+  async orderLabs(patientId: number | string, doctorId: string, orderedLabs: string[]): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/order-labs`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId, orderedLabs }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to order labs');
+    }
   }
 
   /**

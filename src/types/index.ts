@@ -33,7 +33,8 @@ export interface APISubmission {
   seen_by_doctor_id?: string;
   seen_by_doctor_name?: string;
   consultation_started_at?: string;
-  consultation_status?: 'Waiting' | 'In Progress' | 'Completed'; // DB-persisted status
+  consultation_status?: 'Waiting' | 'In Progress' | 'Completed' | 'Waiting for Lab Report' | 'Waiting for Further Consultation'; // DB-persisted status
+  ordered_labs?: string[]; // Array of selected lab test names
   consultation_completed_at?: string;                             // DB-persisted completion time
   clinical_history_formatted?: string;
   clinical_history_edited?: string;    // Doctor-edited override; takes priority over formatted
@@ -69,6 +70,7 @@ export interface PatientSubmission {
   createdAt: string;
   // Vital signs
   vitals: VitalSigns;
+  orderedLabs?: string[];
   clinicalHistoryFormatted?: string;
   // Doctor tracking fields (from DB)
   seen_by_doctor_id?: string;
@@ -97,7 +99,7 @@ export interface PatientDetails {
 }
 
 export type TriageZone = 'RED' | 'YELLOW' | 'GREEN';
-export type PatientStatus = 'Waiting' | 'In Progress' | 'Completed';
+export type PatientStatus = 'Waiting' | 'In Progress' | 'Completed' | 'Waiting for Lab Report' | 'Waiting for Further Consultation';
 
 // Error Types
 export interface APIError {
@@ -114,6 +116,7 @@ export interface AppState {
   lastRefresh: Date | null;
   autoRefreshEnabled: boolean;
   newRedFlags: PatientSubmission[];
+  labNotifications: PatientSubmission[];
 }
 
 // Context Actions
@@ -126,4 +129,8 @@ export interface AppActions {
   manualRefresh: () => void;
   dismissRedFlag: (id: number | string) => void;
   dismissAllRedFlags: () => void;
+  orderLabs: (id: number | string, labs: string[]) => void;
+  addLabNotification: (patient: PatientSubmission) => void;
+  dismissLabNotification: (id: number | string) => void;
+  dismissAllLabNotifications: () => void;
 }
