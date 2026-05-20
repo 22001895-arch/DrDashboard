@@ -51,8 +51,10 @@ export function sortPatientQueue(submissions: PatientSubmission[]): PatientSubmi
     // Priority 3: Status ordering
     const statusOrder: Record<PatientStatus, number> = {
       'In Progress': 0,
-      'Waiting': 1,
-      'Completed': 2
+      'Waiting for Further Consultation': 1,
+      'Waiting': 2,
+      'Waiting for Lab Report': 3,
+      'Completed': 4
     };
     const statusDiff = statusOrder[a.status] - statusOrder[b.status];
     if (statusDiff !== 0) return statusDiff;
@@ -142,10 +144,12 @@ export function formatRelativeTime(date: Date): string {
  * Get status badge color
  */
 export function getStatusColor(status: PatientStatus): string {
-  const colors = {
+  const colors: Record<PatientStatus, string> = {
     'Waiting': 'bg-yellow-100 text-yellow-800 border-yellow-300',
     'In Progress': 'bg-blue-100 text-blue-800 border-blue-300',
-    'Completed': 'bg-green-100 text-green-800 border-green-300'
+    'Completed': 'bg-green-100 text-green-800 border-green-300',
+    'Waiting for Lab Report': 'bg-purple-100 text-purple-800 border-purple-300',
+    'Waiting for Further Consultation': 'bg-indigo-100 text-indigo-800 border-indigo-300'
   };
   return colors[status];
 }

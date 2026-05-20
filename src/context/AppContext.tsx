@@ -215,7 +215,7 @@ export function AppProvider({ children }: AppProviderProps) {
     setSubmissions(prev => {
       const updated = prev.map(sub =>
         sub.id === id
-          ? { ...sub, status: 'Waiting for Lab Report', orderedLabs: Array.from(new Set([...(sub.orderedLabs || []), ...labs])) }
+          ? { ...sub, status: 'Waiting for Lab Report' as PatientStatus, orderedLabs: Array.from(new Set([...(sub.orderedLabs || []), ...labs])) }
           : sub
       );
       return sortPatientQueue(updated);
