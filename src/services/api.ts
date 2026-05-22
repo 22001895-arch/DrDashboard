@@ -5,12 +5,14 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 const HOSPITAL_API_KEY = import.meta.env.VITE_HOSPITAL_API_KEY || '';
 
 const PUBLIC_HEADERS = {
-  'Content-Type': 'application/json'
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true'
 };
 
 const PROTECTED_HEADERS = {
   'Content-Type': 'application/json',
-  'x-api-key': HOSPITAL_API_KEY
+  'x-api-key': HOSPITAL_API_KEY,
+  'ngrok-skip-browser-warning': 'true'
 };
 
 class APIService {
