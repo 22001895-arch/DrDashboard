@@ -30,7 +30,7 @@ This application helps clinicians:
 
 - Auto-sorted queue (priority/red-flag/status/time)
 - **Doctor Ownership**: Displays the name of the assigned doctor in the queue.
-- Red-flag highlighting in list and detail views
+- **Red-Flag Origin Highlighting**: Appends a clear `[AI]` badge next to the red-flag icon or text on the patient rows, patient cards, detail drawer header, and notification banners if the alert was suggested by the AI triage engine.
 - One-click actions:
   - `Attend First` (priority bump + assigned to current Dr)
   - `Mark Not Urgent` (manual red-flag override)
@@ -281,5 +281,5 @@ npm run build
 
 ---
 
-Version: 1.0.0
-Last Updated: April 12, 2026
+Version: 1.1.0
+Last Updated: May 31, 2026

@@ -45,9 +45,21 @@ export function PatientRow({ patient, onViewDetails }: PatientRowProps) {
           <span className="text-sm font-semibold text-gray-900">
             {patient.queueNumber}
           </span>
-          {patient.isRedFlag && (
-            <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" />
-          )}
+          {patient.isRedFlag && (() => {
+            const isAiRedFlag = Array.isArray(patient.details?.triggeredRedFlagRuleIds)
+              ? patient.details.triggeredRedFlagRuleIds.includes('ai_hidden_redflag')
+              : patient.details?.triggeredRedFlagRuleIds === 'ai_hidden_redflag';
+            return (
+              <div className="flex items-center gap-1.5">
+                <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse shrink-0" />
+                {isAiRedFlag && (
+                  <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1 py-0.5 rounded leading-none border border-red-200 shrink-0">
+                    AI
+                  </span>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </td>
 

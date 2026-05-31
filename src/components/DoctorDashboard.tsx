@@ -36,14 +36,20 @@ export function DoctorDashboard() {
         {/* Red Flag Notifications */}
         {newRedFlags.length > 0 && (
           <div className="mb-6 space-y-2">
-            {newRedFlags.map(patient => (
-              <AlertBanner
-                key={patient.id}
-                message={`🚨 NEW RED FLAG: ${patient.patientName && patient.patientName !== 'Unknown Patient' ? patient.patientName : `Patient ${patient.registrationNumber}`} (${patient.age}/${patient.gender}) - ${patient.complaints.join(', ')}`}
-                type="warning"
-                onDismiss={() => dismissRedFlag(patient.id)}
-              />
-            ))}
+            {newRedFlags.map(patient => {
+              const isAiRedFlag = Array.isArray(patient.details?.triggeredRedFlagRuleIds)
+                ? patient.details.triggeredRedFlagRuleIds.includes('ai_hidden_redflag')
+                : patient.details?.triggeredRedFlagRuleIds === 'ai_hidden_redflag';
+              const alertPrefix = isAiRedFlag ? '🚨 NEW AI RED FLAG' : '🚨 NEW RED FLAG';
+              return (
+                <AlertBanner
+                  key={patient.id}
+                  message={`${alertPrefix}: ${patient.patientName && patient.patientName !== 'Unknown Patient' ? patient.patientName : `Patient ${patient.registrationNumber}`} (${patient.age}/${patient.gender}) - ${patient.complaints.join(', ')}`}
+                  type="warning"
+                  onDismiss={() => dismissRedFlag(patient.id)}
+                />
+              );
+            })}
             {newRedFlags.length > 1 && (
               <button
                 onClick={dismissAllRedFlags}

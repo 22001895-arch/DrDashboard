@@ -64,12 +64,17 @@ export function PatientCard({ patient }: PatientCardProps) {
           {/* Patient Info */}
           <div>
             <div className="flex items-center gap-2 mb-1">
-              {patient.isRedFlag && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-                  <AlertTriangle className="w-3 h-3" />
-                  RED FLAG
-                </div>
-              )}
+              {patient.isRedFlag && (() => {
+                const isAiRedFlag = Array.isArray(patient.details?.triggeredRedFlagRuleIds)
+                  ? patient.details.triggeredRedFlagRuleIds.includes('ai_hidden_redflag')
+                  : patient.details?.triggeredRedFlagRuleIds === 'ai_hidden_redflag';
+                return (
+                  <div className="flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
+                    <AlertTriangle className="w-3 h-3" />
+                    RED FLAG {isAiRedFlag ? '[AI]' : ''}
+                  </div>
+                );
+              })()}
             </div>
             {/* Show first red flag cause if available */}
             {patient.isRedFlag && patient.details?.triggeredRedFlagRules?.[0] && (

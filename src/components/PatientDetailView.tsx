@@ -178,12 +178,17 @@ export function PatientDetailView({ patient: initialPatient, onClose }: PatientD
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {patient.isRedFlag && (
-                <div className="flex items-center gap-2 px-4 py-2 bg-red-500 rounded-lg font-semibold">
-                  <AlertTriangle className="w-5 h-5" />
-                  RED FLAG
-                </div>
-              )}
+              {patient.isRedFlag && (() => {
+                const isAiRedFlag = Array.isArray(patient.details?.triggeredRedFlagRuleIds)
+                  ? patient.details.triggeredRedFlagRuleIds.includes('ai_hidden_redflag')
+                  : patient.details?.triggeredRedFlagRuleIds === 'ai_hidden_redflag';
+                return (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-red-500 rounded-lg font-semibold">
+                    <AlertTriangle className="w-5 h-5" />
+                    RED FLAG {isAiRedFlag ? '[AI]' : ''}
+                  </div>
+                );
+              })()}
               <span className={`px-4 py-2 rounded-lg font-semibold border-2 ${getStatusColor(patient.status)}`}>
                 {patient.status}
               </span>
