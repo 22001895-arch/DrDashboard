@@ -91,18 +91,21 @@
 ## 📁 File Structure
 
 ```
-MockEMR2/
+DrDashboard/
 ├── src/
 │   ├── components/
-│   │   ├── AlertBanner.tsx       ✅ Error/warning display
-│   │   ├── DoctorDashboard.tsx   ✅ Main dashboard layout
+│   │   ├── AlertBanner.tsx       ✅ Error/warning/notification banner
+│   │   ├── CompletedPatientsTable.tsx ✅ Table for completed patients
+│   │   ├── DoctorDashboard.tsx   ✅ Main dashboard layout with 5 queue tabs
 │   │   ├── EmptyState.tsx        ✅ No patients view
-│   │   ├── Header.tsx            ✅ Top bar with controls
+│   │   ├── Header.tsx            ✅ Top bar with controls and auth info
+│   │   ├── LaboratoryOrderPanel.tsx ✅ Form to order clinical laboratory tests
 │   │   ├── LoadingState.tsx      ✅ Loading spinner
-│   │   ├── PatientCard.tsx       ✅ Legacy card component
-│   │   ├── PatientDetailView.tsx ✅ Detailed patient workspace
-│   │   ├── PatientRow.tsx        ✅ Queue table row
-│   │   └── QueueStats.tsx        ✅ Statistics cards
+│   │   ├── PatientCard.tsx       ✅ Legacy patient card component
+│   │   ├── PatientDetailView.tsx ✅ Full interactive patient detail workspace
+│   │   ├── PatientRow.tsx        ✅ Queue table row display
+│   │   ├── QueueStats.tsx        ✅ Statistics summary cards
+│   │   └── VitalSigns.tsx        ✅ Interactive panel displaying vitals data
 │   ├── context/
 │   │   └── AppContext.tsx        ✅ Global state management
 │   ├── services/
@@ -411,12 +414,10 @@ interface EnterpriseFeatures {
 
 ## 📝 Known Limitations
 
-### Current Version (1.0.0)
-1. **No Authentication**: All users have full access
-2. **Read-Only API**: Write operations are client-side only
-3. **Manual Refresh Required**: WebSocket not implemented
-4. **No Search**: Must scroll to find patients
-5. **No Advanced Filters**: Search/filter UI not implemented yet
+### Current Version (1.1.0)
+1. **No WebSockets**: Utilizes polling (30s auto-refresh) rather than push-based WebSockets.
+2. **No Search/Filter UI**: Doctors must scroll to find patients in their respective tabs.
+3. **External Consultation Logging**: The system tracks queue and status transitions, but the detailed consultation notes/actions are still meant to integrate with an external EHR.
 
 ### Performance Constraints
 - Optimized for < 100 concurrent patients

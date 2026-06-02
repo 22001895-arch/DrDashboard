@@ -14,8 +14,9 @@ This application helps clinicians:
 - review the active queue in real time
 - prioritize red-flag patients quickly
 - open a dedicated detail screen for each patient
-- track and update consultation status
-- review/edit/copy AI clinical summary text
+- track and update consultation status through a multi-status clinical workflow
+- order laboratory tests and track report readiness
+- review/edit/copy AI clinical summary text and clinical history
 - **Doctor Authentication**: Secure login system to track clinical actions
 - **Consultation Ownership**: Records which doctor is seeing which patient
 
@@ -34,10 +35,12 @@ This application helps clinicians:
 - One-click actions:
   - `Attend First` (priority bump + assigned to current Dr)
   - `Mark Not Urgent` (manual red-flag override)
-- Status flow:
-  - `Waiting`
-  - `In Progress`
-  - `Completed`
+- Five-stage status flow:
+  - `Waiting` (Waiting for Consultation) - automatically hides pending patients whose AI summaries are still processing
+  - `In Progress` (In Consultation) - assigned to the attending doctor
+  - `Waiting for Lab Report` - patient waiting for lab tests to complete
+  - `Waiting for Further Consultation` - patient waiting to resume consultation (e.g. after lab results are ready)
+  - `Completed` (Completed Consultations) - finalized and checked out
 
 ### Live Operations
 
@@ -45,6 +48,7 @@ This application helps clinicians:
 - Manual refresh button
 - Last-updated indicator
 - Error banner with retry action
+- Real-time alert notifications for new Red-Flags and when Lab Reports are ready
 
 ### Patient Detail Workspace
 
@@ -53,7 +57,11 @@ This application helps clinicians:
 - **Mock Vitals Integration**: Real-time vital signs display (BP, HR, SpO2, Temp, Resp)
 - **Clinical History Formatting**: Parsed and structured patient symptom and comorbidity history
 - **Standalone Red Flag Causes**: Prominent visual extraction of critical alerts
+- **Laboratory Order Panel**: Allows doctors to order specific lab tests (e.g. CBC, FBC, Trop-I, ECG, CXR, BMP, LFT, CRP) when a patient is In Consultation
 - AI clinical summary editor with:
+  - edit/confirm/cancel
+  - copy to clipboard (`Validate & Copy`)
+- Clinical history editor with:
   - edit/confirm/cancel
   - copy to clipboard (`Validate & Copy`)
 - Optional notes and additional details rendering
@@ -62,6 +70,7 @@ This application helps clinicians:
 
 - Queue statistics cards
 - New red-flag alert banners
+- Lab report ready notifications
 - Empty and loading states
 
 ## Quick Start
@@ -74,7 +83,7 @@ This application helps clinicians:
 ### Install and Run
 
 ```bash
-cd MockEMR2
+cd DrDashboard
 npm install
 npm run dev
 ```
@@ -165,19 +174,22 @@ Configure these in `.env.local` (copy from `.env.example`):
 ## Project Structure
 
 ```text
-MockEMR2/
+DrDashboard/
 ├── src/
 │   ├── components/
 │   │   ├── AlertBanner.tsx
+│   │   ├── CompletedPatientsTable.tsx
 │   │   ├── DoctorDashboard.tsx
 │   │   ├── EmptyState.tsx
 │   │   ├── Header.tsx
+│   │   ├── LaboratoryOrderPanel.tsx
 │   │   ├── LoadingState.tsx
 │   │   ├── LoginPage.tsx
 │   │   ├── PatientCard.tsx
 │   │   ├── PatientDetailView.tsx
 │   │   ├── PatientRow.tsx
-│   │   └── QueueStats.tsx
+│   │   ├── QueueStats.tsx
+│   │   └── VitalSigns.tsx
 │   ├── context/
 │   │   ├── AppContext.tsx
 │   │   └── AuthContext.tsx
@@ -211,8 +223,13 @@ The application communicates with a backend API to fetch patient data and track 
 ```http
 POST /api/auth/login                         # Authenticate staff
 GET  /api/view                               # Fetch queue from v_patient_queue
-POST /api/patient/:id/start-consultation     # Assign doctor to patient
+POST /api/patient/:id/start-consultation     # Assign doctor to patient, set status to In Progress
 POST /api/patient/:id/override-redflag       # Manual red-flag clearance
+POST /api/patient/:id/complete-consultation  # Complete consultation, set status to Completed
+POST /api/patient/:id/update-status          # Update status generically (e.g. Further Consultation)
+POST /api/patient/:id/order-labs             # Order lab tests for a patient
+POST /api/patient/:id/update-history         # Save edited clinical history
+POST /api/patient/:id/update-summary         # Save edited AI summary
 ```
 
 **Security:**

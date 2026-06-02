@@ -12,68 +12,112 @@
 
 ### View Patient Details
 ```
-Click: "View Details" button
+Click: "View Details" button on any patient row
 → Opens patient detail workspace
-→ Review demographics, complaints, AI summary, notes, and additional details
+→ Review demographics, complaints, vitals, AI summary, notes, clinical history, and ordered labs
 ```
 
 ### Start Consultation
 ```
-Click: "Start" button (on waiting patients)
+Click: "View Details" → click "Start Consultation" (or "Attend First" for red-flags in the waiting queue)
+→ Attending doctor is assigned to patient (records name in DB)
 → Status changes to "In Progress"
-→ Patient stays in queue for reference
+→ Patient moves to the "In Consultation" tab
 ```
 
 ### Complete Consultation
 ```
-Click: "Complete" button (on in-progress patients)
+Click: "Mark as Completed" button (in detail view of "In Progress" patients)
 → Status changes to "Completed"
-→ Patient moves to bottom of queue
+→ Patient moves to the "Completed Consultations" tab
+→ Records check-out timestamp and calculates consultation duration
+```
+
+### Order Lab Tests
+```
+When status is "In Progress":
+Open Patient Details → Use "Laboratory Order Panel" → Select tests (e.g. CBC, ECG, CXR) → Click "Order Tests"
+→ Status changes to "Waiting for Lab Report"
+→ Patient moves to the "Waiting for Lab Report" tab
+```
+
+### Handle Lab Report Ready
+```
+When status is "Waiting for Lab Report":
+Open Patient Details → Click "Lab Report Ready"
+→ Status changes to "Waiting for Further Consultation"
+→ Triggers a notification banner on the dashboard for all doctors: "Patient RN's lab report is ready"
+→ Patient moves to the "Waiting for Further Consultation" tab
+```
+
+### Order Next Consultation / Defer
+```
+When status is "In Progress":
+Open Patient Details → Click "Order Next Consultation"
+→ Status changes to "Waiting for Further Consultation"
+→ Patient moves to the "Waiting for Further Consultation" tab
+```
+
+### Resume Consultation
+```
+When status is "Waiting for Further Consultation":
+Open Patient Details → Click "Resume Consultation"
+→ Status changes to "In Progress"
+→ Patient returns to the "In Consultation" tab
 ```
 
 ### Attend Red-Flag Immediately
 ```
-Click: "Attend First" button (on red-flag patients)
+Click: "Attend First" button (available directly in the queue for waiting red-flag patients)
 → Patient moves to #1 position
-→ Status changes to "In Progress"
-→ Visual priority indicator appears
+→ Status changes to "In Progress" (assigned to the logged-in doctor)
 ```
 
-### Remove Red-Flag Status
+### Remove Red-Flag Status (Override)
 ```
-Click: "Mark Not Urgent" button
-→ Red-flag indicator removed
-→ Patient returns to normal queue position
-→ Sorted by arrival time
+Click: "Mark Not Urgent" button (in queue or patient detail view)
+→ Red-flag status is overridden in database
+→ Patient returns to normal queue position sorted by arrival time
 ```
 
 ---
 
 ## 📊 Understanding the Interface
 
+### Queue Navigation Tabs
+The dashboard organizes patients into 5 workspace tabs based on their clinical journey:
+1. **Waiting for Consultation**: New patients waiting to be seen. Red flags are highlighted.
+2. **In Consultation**: Patients currently with a doctor.
+3. **Waiting for Lab Report**: Patients waiting for laboratory results to be processed.
+4. **Waiting for Further Consultation**: Patients ready for a follow-up consult (e.g. labs completed).
+5. **Completed Consultations**: Patients whose consultations are finished and logged.
+
 ### Color Coding
 
 | Color | Meaning |
 |-------|---------|
-| 🔴 Red Border | Red-flag patient - requires immediate attention |
-| 🟡 Yellow Badge | Status: Waiting |
-| 🔵 Blue Badge | Status: In Progress |
+| 🔴 Red Row/Border | Red-flag patient (AI triage rule triggered or manual red flag) |
+| 🟡 Yellow Badge | Status: Waiting for Consultation |
+| 🔵 Blue Badge | Status: In Progress (In Consultation) |
+| 🟣 Purple Badge | Status: Waiting for Lab Report |
+| 🔵 Indigo/Teal Badge | Status: Waiting for Further Consultation |
 | 🟢 Green Badge | Status: Completed |
-| 🟣 Purple Ring | Manually prioritized patient |
+| 🟣 Light Purple Bg | Manually prioritized / highlighted patient |
 
-### Queue Position
-
-- **#1-3**: Top priority (red-flags and in-progress)
-- **#4+**: Normal queue (sorted by arrival time)
-- **Bottom**: Completed patients
+### Queue Sorting Priority
+The queue tables are dynamically sorted using the following priorities:
+1. **Manually prioritized red-flags** (`isPriority === true` and `isRedFlag === true`)
+2. **Red-flag cases** (system/AI red flags)
+3. **Clinical Status** (`In Progress` > `Waiting for Further Consultation` > `Waiting` > `Waiting for Lab Report` > `Completed`)
+4. **Arrival time** (earliest FCFS first)
 
 ### Patient Queue Row Information
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│ Queue # │ RN │ Age │ Gender │ Arrival │ Status │ Actions          │
-│ Q001    │ ...│ ... │ ...    │ ...     │ ...    │ View / Priority  │
-└─────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────┐
+│ Queue # │ RN │ Age │ Gender │ Check In │ Doctor │ Status │ Actions          │
+│ Q001    │ ...│ ... │ ...    │ ...      │ ...    │ ...    │ View / Priority  │
+└───────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---

@@ -253,7 +253,7 @@ A fully functional, modern web application for Emergency Department doctors to m
 
 #### 1. Start Development Server
 ```bash
-cd c:\Users\User\Desktop\MockEMR2
+cd c:\Users\User\Desktop\DrDashboard
 npm install  # (already done)
 npm run dev
 ```
@@ -455,7 +455,7 @@ See [DOCTOR_GUIDE.md](DOCTOR_GUIDE.md) for complete guide.
 - DEPLOYMENT.md - Deployment guide
 
 ### Repository
-- Location: `c:\Users\User\Desktop\MockEMR2`
+- Location: `c:\Users\User\Desktop\DrDashboard`
 - All files version controlled ready
 - Clean commit history ready
 

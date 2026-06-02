@@ -148,26 +148,77 @@ interface AppState {
   lastRefresh: Date | null;
   autoRefreshEnabled: boolean;
   newRedFlags: PatientSubmission[];
+  labNotifications: PatientSubmission[];
 }
 
 interface AppActions {
   fetchSubmissions: () => Promise<void>;
-  attendFirst: (id: number) => void;
-  markNotUrgent: (id: number) => void;
-  updateStatus: (id: number, status: PatientStatus) => void;
+  attendFirst: (id: number | string) => void;
+  markNotUrgent: (id: number | string) => void;
+  updateStatus: (id: number | string, status: PatientStatus) => void;
   toggleAutoRefresh: () => void;
   manualRefresh: () => void;
-  dismissRedFlag: (id: number) => void;
+  dismissRedFlag: (id: number | string) => void;
   dismissAllRedFlags: () => void;
+  orderLabs: (id: number | string, labs: string[]) => void;
+  addLabNotification: (patient: PatientSubmission) => void;
+  dismissLabNotification: (id: number | string) => void;
+  dismissAllLabNotifications: () => void;
 }
 ```
 
 **State Update Flow**:
 1. User action triggers action function
-2. Optimistic UI update (immediate feedback)
-3. API call (future: write-back integration)
-4. Reconciliation on next refresh
-5. Error rollback if needed
+2. Optimistic UI update (immediate feedback in queue sorting and tabs)
+3. API call updates DB consultation status, ordered labs, clinical history, or overrides red-flags
+4. Reconciliation on next auto-refresh (every 30 seconds)
+5. Rollback to database-validated state on failure
+
+### 3.3 Patient Management Flow Diagram
+
+The following Mermaid diagram visualizes the complete patient lifecycle, transitions, tabs, and clinical actions within the dashboard:
+
+```mermaid
+graph TD
+    %% Styling
+    classDef stateWaiting fill:#fef3c7,stroke:#d97706,stroke-width:2px,color:#92400e;
+    classDef stateProgress fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e40af;
+    classDef stateLab fill:#f3e8ff,stroke:#7c3aed,stroke-width:2px,color:#5b21b6;
+    classDef stateFurther fill:#e0f2fe,stroke:#0284c7,stroke-width:2px,color:#075985;
+    classDef stateCompleted fill:#d1fae5,stroke:#059669,stroke-width:2px,color:#065f46;
+    classDef redFlag fill:#fee2e2,stroke:#dc2626,stroke-width:3px,color:#991b1b;
+    classDef system fill:#f3f4f6,stroke:#4b5563,stroke-dasharray: 5 5,color:#1f2937;
+
+    %% Nodes
+    A[Patient complete vitals taking and form submission] --> D{Triage & Red Flags}
+    
+    D -- Normal --> E[Waiting for Consultation]:::stateWaiting
+    D -- Red Flag Rule Triggered --> F[Waiting for Consultation <br/> Red Flag Alert]:::redFlag
+    
+    %% Actions from Waiting
+    E -->|Click 'Start Consultation'| H[In Consultation]:::stateProgress
+    
+    F -->|System: Show red alert banner| F1[Alert Banner & Top of Queue]:::redFlag
+    F -->|Action: Click 'Attend First'| H
+    F -->|Action: Click 'Mark Not Urgent'| G[Remove Red Flag <br/> Reorder in Queue]:::stateWaiting
+    G -->|Click 'Start Consultation'| H
+
+    %% Consultation state actions
+    H -->|Action: Open Detail View| H1[Review & Edit AI Summary / History]:::stateProgress
+    H -->|Action: Order Lab Tests| I[Waiting for Lab Report]:::stateLab
+    H -->|Action: Order Next Consultation| J[Waiting for Further Consultation]:::stateFurther
+    H -->|Action: Mark as Completed| K[Completed Consultations]:::stateCompleted
+
+    %% Lab report state actions
+    I -->|System: Lab processes results| I1[Lab Report Ready Banner Alert]:::stateLab
+    I1 -->|Action: Click 'Lab Report Ready'| J
+
+    %% Further consultation state actions
+    J -->|Action: Click 'Resume Consultation'| H
+    
+    %% Final state
+    K --> L([Patient Checked Out])
+```
 
 ---
 
@@ -331,25 +382,41 @@ function handleMarkNotUrgent(patientId: number) {
 ```typescript
 // src/services/api.ts
 
-const API_BASE_URL = 'https://veristic-nonsoberly-lakisha.ngrok-free.dev/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const HOSPITAL_API_KEY = import.meta.env.VITE_HOSPITAL_API_KEY || '';
 
-const API_HEADERS = {
-  'ngrok-skip-browser-warning': 'true',
-  'Content-Type': 'application/json'
+const PUBLIC_HEADERS = {
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true'
+};
+
+const PROTECTED_HEADERS = {
+  'Content-Type': 'application/json',
+  'x-api-key': HOSPITAL_API_KEY,
+  'ngrok-skip-browser-warning': 'true'
 };
 
 class APIService {
+  async login(email: string, password: string): Promise<Doctor> {
+    const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: PUBLIC_HEADERS,
+      body: JSON.stringify({ email, password }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Login failed');
+    return data.doctor as Doctor;
+  }
+
   async fetchSubmissions(): Promise<APISubmission[]> {
     try {
       const response = await fetch(`${API_BASE_URL}/view`, {
         method: 'GET',
-        headers: API_HEADERS
+        headers: PUBLIC_HEADERS
       });
-      
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-      
       return await response.json();
     } catch (error) {
       if (error instanceof TypeError) {
@@ -359,13 +426,88 @@ class APIService {
     }
   }
   
-  // Future endpoints for write operations
-  async updateStatus(id: number, status: PatientStatus): Promise<void> {
-    // POST /api/submissions/{id}/status
+  async startConsultation(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/start-consultation`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to start consultation');
+    }
   }
-  
-  async setPriority(id: number, isPriority: boolean): Promise<void> {
-    // POST /api/submissions/{id}/priority
+
+  async overrideRedFlag(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/override-redflag`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to override red flag');
+    }
+  }
+
+  async completeConsultation(patientId: number | string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/complete-consultation`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to complete consultation');
+    }
+  }
+
+  async updateStatus(patientId: number | string, status: string, doctorId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-status`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId, status }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to update status');
+    }
+  }
+
+  async orderLabs(patientId: number | string, doctorId: string, orderedLabs: string[]): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/order-labs`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ doctorId, orderedLabs }),
+    });
+    if (!response.ok) {
+      const data = await response.json();
+      throw new Error(data.error || 'Failed to order labs');
+    }
+  }
+
+  async updateClinicalHistory(patientId: number | string, clinical_history_edited: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-history`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ clinical_history_edited }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to update clinical history');
+    }
+  }
+
+  async updateAiSummary(patientId: number | string, ai_summary: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/patient/${patientId}/update-summary`, {
+      method: 'POST',
+      headers: PROTECTED_HEADERS,
+      body: JSON.stringify({ ai_summary }),
+    });
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to update AI summary');
+    }
   }
 }
 
@@ -497,13 +639,13 @@ Identifies red-flag case
     ↓
 Clicks "Attend First" → Patient moves to #1
     ↓
-Clicks "View Details" → Secondary view (future)
+Clicks "View Details" → Open detailed patient workspace
     ↓
 [Auto-refresh] Queue updates every 30s
     ↓
-Doctor marks patient as "In Progress"
+Doctor marks patient as "In Progress" or orders lab tests
     ↓
-Consultation begins (external flow)
+Consultation begins and tracks status in database
 ```
 
 ### 9.2 Red-Flag Workflow
@@ -601,22 +743,25 @@ Desktop: 1024px+        (Horizontal row layout as shown)
 
 ### 12.1 Client-Side Security
 
-- **No sensitive data in localStorage**: Use session storage for temporary state
-- **HTTPS Only**: Enforce secure connections
-- **XSS Prevention**: React's built-in sanitization + CSP headers
-- **CORS Configuration**: Validate ngrok headers
-- **Input Validation**: Sanitize all user inputs (future write operations)
+- **No sensitive data in localStorage**: Use session storage (or secure httpOnly cookies) for active user state.
+- **HTTPS Only**: Enforce secure connections in production.
+- **XSS Prevention**: React's built-in JSX sanitization handles rendering; all user input fields are sanitized.
+- **CORS Configuration**: CORS headers are configured on the API backend to whitelist the frontend domain.
+- **Input Validation**: Robust parsing and type checks on raw details before storage or rendering.
+- **x-api-key Verification**: Protected database write endpoints verify requests using a hospital API key sent via the `x-api-key` header.
 
-### 12.2 Future Authentication Flow
+### 12.2 Implemented Authentication Flow
+
+The dashboard requires doctors to authenticate prior to viewing the queue. Clinical audit tracking is established by binding the doctor's credentials to every action.
 
 ```
-User login → JWT token → Store in httpOnly cookie
-                ↓
-Every API request includes cookie
-                ↓
-Backend validates token → 401 if expired
-                ↓
-Frontend: Redirect to login on 401
+Login Page (Email/Password) ──> POST /api/auth/login ──> Success (JWT/Doctor Object)
+                                                                 │
+                                                                 ▼
+[sessionStorage] ──> Persist Login State ──> Global AuthContext State
+                                                     │
+                                                     ▼
+Write Operations (Override, Start, Complete, Labs) ──> Send staff_id / doctor_id along with request
 ```
 
 ---
@@ -628,15 +773,14 @@ Frontend: Redirect to login on 401
 **Current Design Handles**:
 - Up to 100 concurrent patients
 - 30-second refresh intervals
-- 1-2 simultaneous users
+- 1-2 simultaneous users per shift
 
 **Future Enhancements for Scale**:
-1. **WebSocket Integration**: Replace polling with real-time push
-2. **Pagination**: Load queue in chunks (20 patients/page)
-3. **Filtering**: By triage zone, status, time range
-4. **Search**: Full-text search by name, RN
-5. **Multi-user Sync**: Collaborative queue management
-6. **Audit Trail**: Track all doctor actions with timestamps
+1. **WebSocket Integration**: Replace polling with real-time push events to update status immediately when another clinician edits a patient.
+2. **Pagination**: Load queue in chunks (20 patients/page) for historical/completed cases.
+3. **Filtering**: Advanced multi-attribute filters (by triage zone, waiting time, assigned doctor).
+4. **Search**: Full-text search by name or registration number.
+5. **Multi-user Sync**: Collaborative queue conflict-resolution.
 
 ### 13.2 Proposed WebSocket Architecture
 
@@ -656,24 +800,23 @@ Events:                                    Database
 ### 13.3 Advanced Features Roadmap
 
 **Phase 2 (3-6 months)**:
-- Detailed patient view (modal/sidebar)
-- AI summary highlighting
-- Filtering and search
-- Export to PDF
-- Print queue
+- Filtering and search in dashboard tabs
+- Export summary to PDF
+- Print formatted queue list
+- Audit logs panel for supervisors
 
 **Phase 3 (6-12 months)**:
-- Multi-department support
-- Real-time notifications
-- Voice commands
-- Mobile app (React Native)
-- Analytics dashboard
+- Multi-department support (Emergency, Outpatient, Lab, Pharmacy)
+- Real-time push notifications using WebSockets
+- Voice commands for clinical summary dictation
+- Mobile companion app (React Native)
+- Queue bottleneck analytics dashboard
 
 **Phase 4 (12+ months)**:
-- Predictive wait times
-- Resource allocation AI
-- Integration with EHR systems
-- HIPAA compliance audit
+- Predictive wait time algorithm using past statistics
+- Resource allocation AI (doctor/bed assignment optimization)
+- Direct integration with major hospital EHR systems (Epic, Cerner)
+- HIPAA compliance audit and formal certification
 
 ---
 

@@ -51,7 +51,7 @@ vercel login
 
 3. **Deploy**
 ```bash
-cd c:\Users\User\Desktop\MockEMR2
+cd c:\Users\User\Desktop\DrDashboard
 vercel --prod
 ```
 
