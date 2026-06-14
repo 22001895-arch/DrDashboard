@@ -15,7 +15,7 @@ export function VitalSignsDisplay({ vitals, layout = 'compact' }: VitalSignsProp
     }
     if (metric === 'respiratoryRate') {
       const val = typeof value === 'string' ? parseInt(value) : value;
-      if (val < 12 || val > 20) return val < 10 || val > 25 ? 'critical' : 'warning';
+      if (val < 12 || val > 30) return val < 10 || val > 35 ? 'critical' : 'warning';
       return 'normal';
     }
     if (metric === 'spo2') {

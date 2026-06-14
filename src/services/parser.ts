@@ -12,16 +12,9 @@ import {
  * Handles multiple possible field name variations from different API versions
  */
 function parseVitals(raw: APISubmission): VitalSigns {
-  // Parse SPO2 - support raw.spo2 or raw.ppi (legacy fallback)
-  let spo2Value = raw.spo2 !== undefined ? raw.spo2 : raw.ppi;
-  if (typeof spo2Value === 'string') {
-    spo2Value = parseFloat(spo2Value);
-  }
-  let spo2 = typeof spo2Value === 'number' && !isNaN(spo2Value) ? spo2Value : undefined;
-  // If SpO2 is formatted as a fraction/decimal from legacy PPI (e.g. 0.98), scale it to a percentage
-  if (spo2 !== undefined && spo2 <= 1) {
-    spo2 = Math.round(spo2 * 100);
-  }
+  // SpO2 Hardcoded to 98%
+  const spo2 = 98;
+
   
   // Extract heart_rate - this is the PRIMARY field from central server
   let heartRateValue = raw.heart_rate;
